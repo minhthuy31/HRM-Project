@@ -1,0 +1,335 @@
+/* ==========================================================================
+   1. BỐ CỤC TRANG CHÍNH (PAGE LAYOUT)
+   ========================================================================== */
+.employee-page {
+    background-color: var(--card-bg, #ffffff);
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.1));
+    color: var(--main-text);
+    
+    /* Bố cục cho thanh cuộn */
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 150px); 
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.header-right-panel {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.add-btn { 
+    background-color: #0d6efd; 
+    color: white; 
+    border: none; 
+    padding: 10px 16px; 
+    border-radius: 6px; 
+    font-size: 16px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+.add-btn:hover { 
+    background-color: #0b5ed7; 
+}
+
+
+/* ==========================================================================
+   2. BỘ LỌC VÀ TÌM KIẾM
+   ========================================================================== */
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-container select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--sidebar-border);
+    background-color: var(--sidebar-bg);
+    color: var(--main-text);
+    font-size: 14px;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    z-index: 2; 
+}
+
+.search-container input {
+    padding: 8px 12px 8px 42px;
+    border-radius: 6px;
+    border: 1px solid var(--sidebar-border);
+    background-color: var(--sidebar-bg);
+    color: var(--main-text);
+    font-size: 14px;
+    width: 250px;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    z-index: 1; 
+}
+
+.search-container input:focus {
+    border-color: #0d6efd;
+}
+
+
+/* ==========================================================================
+   3. BẢNG DỮ LIỆU (DATA TABLE)
+   ========================================================================== */
+.table-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 1px solid var(--sidebar-border);
+    border-radius: 6px;
+}
+
+.employee-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    text-align: left; 
+}
+
+.employee-table thead { 
+    background-color: var(--hover-bg, #f8f9fa); 
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.employee-table th, .employee-table td { 
+    padding: 12px 15px; 
+    border-bottom: 1px solid var(--sidebar-border, #e0e0e0); 
+    vertical-align: middle;
+}
+.employee-table th { 
+    font-weight: 600; 
+}
+
+.employee-table .table-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.employee-name-cell { 
+    cursor: pointer; 
+    font-weight: 500; 
+}
+.employee-name-cell:hover { 
+    color: var(--hover-text); 
+}
+
+
+/* ==========================================================================
+   4. MENU CHUỘT PHẢI (CONTEXT MENU)
+   ========================================================================== */
+.context-menu { 
+    position: absolute; 
+    z-index: 1010; 
+    background-color: var(--card-bg); 
+    border-radius: 6px; 
+    box-shadow: 0 4px 12px var(--shadow-color); 
+    padding: 8px 0; 
+    min-width: 160px; 
+    border: 1px solid var(--sidebar-border); 
+}
+
+.context-menu ul { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+}
+
+.context-menu li { 
+    padding: 8px 16px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+.context-menu li:hover { 
+    background-color: var(--hover-bg); 
+    color: var(--hover-text); 
+}
+
+
+/* ==========================================================================
+   5. MODAL (POPUP FORM)
+   ========================================================================== */
+.modal-overlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background: rgba(0, 0, 0, 0.6); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 1001; 
+}
+
+.modal-content { 
+    background: var(--card-bg); 
+    color: var(--main-text); 
+    padding: 30px; 
+    border-radius: 8px; 
+    width: 90%; 
+    max-width: 900px; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+}
+
+.modal-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 20px; 
+}
+.modal-header h2 { 
+    margin: 0; 
+}
+.modal-close-btn { 
+    background: none; 
+    border: none; 
+    font-size: 24px; 
+    cursor: pointer; 
+    color: var(--main-text); 
+}
+
+
+/* ==========================================================================
+   6. FORM TRONG MODAL
+   ========================================================================== */
+.employee-form { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    gap: 15px 25px; 
+}
+
+.form-group { 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.form-group label { 
+    margin-bottom: 5px; 
+    font-weight: 500; 
+}
+
+.form-group input, .form-group select { 
+    width: 100%; 
+    padding: 10px; 
+    border-radius: 6px; 
+    border: 1px solid var(--sidebar-border); 
+    background-color: var(--sidebar-bg); 
+    color: var(--main-text); 
+    font-size: 16px; 
+}
+
+.form-section-title {
+    grid-column: 1 / -1;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--logo-text-color);
+    margin-top: 20px;
+    margin-bottom: 0px;
+    border-bottom: 2px solid var(--hover-bg);
+    padding-bottom: 8px;
+}
+
+.full-width { 
+    grid-column: 1 / -1; 
+}
+
+.btn-submit { 
+    background-color: #0d6efd; 
+    color: white; 
+    border: none; 
+    padding: 12px; 
+    border-radius: 6px; 
+    font-size: 16px; 
+    cursor: pointer; 
+    width: 100%; 
+    margin-top: 10px; 
+}
+.btn-submit:hover { 
+    background-color: #0b5ed7; 
+}
+
+
+/* ==========================================================================
+   7. UPLOAD ẢNH (AVATAR UPLOADER)
+   ========================================================================== */
+.avatar-uploader {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.avatar-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--sidebar-border);
+  cursor: pointer;
+  background-color: var(--hover-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--toggle-icon-color);
+  font-size: 14px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dropdown-menu .dropdown-button {
+  background: none;
+  border: none;
+  padding: 6px 10px; /* Giống padding của thẻ <a> */
+  width: 100%;
+  text-align: left; /* Căn chữ sang trái */
+  font-size: 1em; /* Kế thừa kích thước chữ */
+  color: var(--main-text); /* Dùng biến màu chung */
+  cursor: pointer;
+  font-family: inherit; /* Kế thừa font chữ */
+  border-radius: 4px; /* Bo góc nhẹ */
+}
+
+.dropdown-menu .dropdown-button:hover {
+  background-color: var(--hover-bg); /* Giống hiệu ứng hover của thẻ <a> */
+}
