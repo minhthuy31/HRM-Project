@@ -196,18 +196,16 @@
     align-items: center; 
     z-index: 1001; 
 }
-
 .modal-content { 
     background: var(--card-bg); 
     color: var(--main-text); 
     padding: 30px; 
     border-radius: 8px; 
     width: 90%; 
-    max-width: 900px; 
+    max-width: 1000px;
     max-height: 90vh; 
     overflow-y: auto; 
 }
-
 .modal-header { 
     display: flex; 
     justify-content: space-between; 
@@ -224,6 +222,28 @@
     cursor: pointer; 
     color: var(--main-text); 
 }
+/* Modal thêm nhân viên (rộng thoáng hơn) */
+.modal-content {
+  width: 80%;         /* gần full màn hình */
+  max-width: 900px;  /* tối đa 1400px */
+  max-height: 90vh;   /* cao tối đa 90% chiều cao màn hình */
+  overflow-y: auto;   /* scroll trong modal */
+  padding: 40px;      /* padding thoáng hơn */
+}
+
+/* Input + Select trong modal thêm nhân viên */
+.modal-content .form-group input,
+.modal-content .form-group select {
+  padding: 14px 16px;  /* cao và rộng hơn */
+  font-size: 18px;     /* chữ to hơn */
+}
+
+/* Nút submit to hơn */
+.modal-content.btn-submit {
+  font-size: 18px;
+  padding: 14px 20px;
+}
+
 
 
 /* ==========================================================================
@@ -231,7 +251,7 @@
    ========================================================================== */
 .employee-form { 
     display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    grid-template-columns: repeat(3, 1fr); 
     gap: 15px 25px; 
 }
 

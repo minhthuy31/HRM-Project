@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaTimes, FaUserCircle } from 'react-icons/fa';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import '../../styles/EmployeePage.css';
 
 const getImageUrl = (path) => {
@@ -10,23 +12,28 @@ const getImageUrl = (path) => {
 
 const EmployeeModal = ({
     employee, onSave, onCancel,
-    phongBans, chucVus, chuyenNganhs, trinhDoHocVans,
+    phongBans, chucVus, chuyenNganhs, trinhDoHocVans, hopDongs,
     isViewOnly = false
 }) => {
-    const [formData, setFormData] = useState(employee ? { ...employee } : { trangThai: true, gioiTinh: 1 });
+    const [formData, setFormData] = useState({});
     const [selectedFile, setSelectedFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(employee?.hinhAnh || null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const fileInputRef = useRef(null);
     
     useEffect(() => {
-        setFormData(employee ? { ...employee } : { trangThai: true, gioiTinh: 1 });
-        setPreviewUrl(employee?.hinhAnh || null);
+        const initialData = employee ? { ...employee } : { trangThai: true, gioiTinh: 1 };
+        setFormData(initialData);
+        setPreviewUrl(initialData.hinhAnh || null);
         setSelectedFile(null);
     }, [employee]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(p => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
+    };
+    
+    const handleDateChange = (date, name) => {
+        setFormData(p => ({ ...p, [name]: date }));
     };
 
     const handleImageChange = (e) => {
@@ -43,7 +50,7 @@ const EmployeeModal = ({
     };
 
     const getTitle = () => {
-        if (isViewOnly) return `Thông tin chi tiết: ${employee.hoTen}`;
+        if (isViewOnly && employee) return `Thông tin chi tiết: ${employee.hoTen}`;
         return employee ? `Sửa thông tin: ${employee.hoTen}` : 'Thêm nhân viên mới';
     };
 
@@ -54,7 +61,7 @@ const EmployeeModal = ({
                     <h2>{getTitle()}</h2>
                     <button onClick={onCancel} className="modal-close-btn"><FaTimes /></button>
                 </div>
-                <form onSubmit={isViewOnly ? (e) => e.preventDefault() : handleSubmit}>
+                <form onSubmit={handleSubmit}>
                     <div className="avatar-uploader">
                         <input type="file" accept="image/*" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImageChange} disabled={isViewOnly} />
                         <div className="avatar-preview" onClick={() => !isViewOnly && fileInputRef.current.click()}>
@@ -65,8 +72,15 @@ const EmployeeModal = ({
                         <h3 className="form-section-title">Thông tin cá nhân</h3>
                         {formData.maNhanVien && (<div className="form-group"><label>Mã nhân viên</label><input type="text" value={formData.maNhanVien} disabled /></div>)}
                         <div className="form-group"><label>Họ tên</label><input type="text" name="hoTen" value={formData.hoTen || ''} onChange={handleChange} disabled={isViewOnly} required /></div>
-                        {!isViewOnly && (<div className="form-group"><label>Mật khẩu</label><input type="password" name="matKhau" placeholder={employee ? "Để trống nếu không đổi" : ""} onChange={handleChange} required={!employee} /></div>)}
-                        <div className="form-group"><label>Ngày sinh</label><input type="date" name="ngaySinh" value={formData.ngaySinh ? new Date(formData.ngaySinh).toISOString().split('T')[0] : ''} onChange={handleChange} disabled={isViewOnly} /></div>
+                        {!isViewOnly ? (
+                            <div className="form-group"><label>Mật khẩu</label><input type="password" name="matKhau" placeholder={employee ? "Để trống nếu không đổi" : ""} onChange={handleChange} required={!employee} /></div>
+                        ) : (
+                            <div className="form-group"><label>Mật khẩu</label><input type="password" value="********" disabled /></div>
+                        )}
+                        <div className="form-group">
+                            <label>Ngày sinh</label>
+                            {isViewOnly ? (<input type="text" value={formData.ngaySinh ? new Date(formData.ngaySinh).toLocaleDateString('vi-VN') : ''} disabled />) : (<DatePicker selected={formData.ngaySinh ? new Date(formData.ngaySinh) : null} onChange={(date) => handleDateChange(date, 'ngaySinh')} dateFormat="dd/MM/yyyy" placeholderText="dd/mm/yyyy" className="date-picker-input"/>)}
+                        </div>
                         <div className="form-group"><label>Giới tính</label><select name="gioiTinh" value={formData.gioiTinh ?? ''} onChange={handleChange} disabled={isViewOnly}><option value="">-- Chọn --</option><option value="1">Nam</option><option value="0">Nữ</option><option value="2">Khác</option></select></div>
                         <div className="form-group"><label>Dân tộc</label><input type="text" name="danToc" value={formData.danToc || ''} onChange={handleChange} disabled={isViewOnly} /></div>
                         <div className="form-group"><label>Tình trạng hôn nhân</label><input type="text" name="tinhTrangHonNhan" value={formData.tinhTrangHonNhan || ''} onChange={handleChange} disabled={isViewOnly} /></div>
@@ -76,7 +90,10 @@ const EmployeeModal = ({
 
                         <h3 className="form-section-title">Thông tin định danh & Liên lạc</h3>
                         <div className="form-group"><label>CCCD</label><input type="text" name="cccd" value={formData.cccd || ''} onChange={handleChange} disabled={isViewOnly} /></div>
-                        <div className="form-group"><label>Ngày cấp CCCD</label><input type="date" name="ngayCapCCCD" value={formData.ngayCapCCCD ? new Date(formData.ngayCapCCCD).toISOString().split('T')[0] : ''} onChange={handleChange} disabled={isViewOnly} /></div>
+                        <div className="form-group">
+                            <label>Ngày cấp CCCD</label>
+                            {isViewOnly ? (<input type="text" value={formData.ngayCapCCCD ? new Date(formData.ngayCapCCCD).toLocaleDateString('vi-VN') : ''} disabled />) : (<DatePicker selected={formData.ngayCapCCCD ? new Date(formData.ngayCapCCCD) : null} onChange={(date) => handleDateChange(date, 'ngayCapCCCD')} dateFormat="dd/MM/yyyy" placeholderText="dd/mm/yyyy" className="date-picker-input" />)}
+                        </div>
                         <div className="form-group"><label>Nơi cấp CCCD</label><input type="text" name="noiCapCCCD" value={formData.noiCapCCCD || ''} onChange={handleChange} disabled={isViewOnly} /></div>
                         <div className="form-group"><label>Số điện thoại</label><input type="text" name="sdt_NhanVien" value={formData.sdt_NhanVien || ''} onChange={handleChange} disabled={isViewOnly} /></div>
                         <div className="form-group"><label>Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} disabled={isViewOnly} /></div>
@@ -88,6 +105,7 @@ const EmployeeModal = ({
                         <div className="form-group"><label>Chức vụ</label><select name="maChucVuNV" value={formData.maChucVuNV || ''} onChange={handleChange} disabled={isViewOnly}><option value="">-- Chọn --</option>{(chucVus || []).map(cv => <option key={cv.maChucVuNV} value={cv.maChucVuNV}>{cv.tenChucVu}</option>)}</select></div>
                         <div className="form-group"><label>Chuyên ngành</label><select name="maChuyenNganh" value={formData.maChuyenNganh || ''} onChange={handleChange} disabled={isViewOnly}><option value="">-- Chọn --</option>{(chuyenNganhs || []).map(cn => <option key={cn.maChuyenNganh} value={cn.maChuyenNganh}>{cn.tenChuyenNganh}</option>)}</select></div>
                         <div className="form-group"><label>Trình độ học vấn</label><select name="maTrinhDoHocVan" value={formData.maTrinhDoHocVan || ''} onChange={handleChange} disabled={isViewOnly}><option value="">-- Chọn --</option>{(trinhDoHocVans || []).map(td => <option key={td.maTrinhDoHocVan} value={td.maTrinhDoHocVan}>{td.tenTrinhDo}</option>)}</select></div>
+                        <div className="form-group"><label>Hợp đồng</label><select name="maHopDong" value={formData.maHopDong || ''} onChange={handleChange} disabled={isViewOnly}><option value="">-- Chọn --</option>{(hopDongs || []).map(hd => <option key={hd.maHopDong} value={hd.maHopDong}>{hd.loaiHopDong}</option>)}</select></div>
                         <div className="form-group"><label>Loại nhân viên</label><input type="text" name="loaiNhanVien" value={formData.loaiNhanVien || ''} onChange={handleChange} disabled={isViewOnly} /></div>
                         <div className="form-group"><label>Trạng thái</label><select name="trangThai" value={formData.trangThai} onChange={handleChange} disabled={isViewOnly}><option value={true}>Đang hoạt động</option><option value={false}>Đã nghỉ việc</option></select></div>
 

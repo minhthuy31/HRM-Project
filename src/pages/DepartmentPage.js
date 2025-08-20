@@ -92,6 +92,7 @@ const DepartmentPage = () => {
                 </div>
 
                 {loading ? <p>Đang tải...</p> : (
+                  <div className="department-table-container">
                     <table className="department-table">
                         <thead><tr><th>Mã phòng ban</th><th>Tên phòng ban</th><th>Địa chỉ</th><th>Số điện thoại</th></tr></thead>
                         <tbody>
@@ -105,6 +106,7 @@ const DepartmentPage = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 )}
             </div>
             {contextMenu.visible && <ContextMenu x={contextMenu.x} y={contextMenu.y} onShowInfo={() => { handleShowInfo(); closeContextMenu(); }} onEdit={() => { handleEdit(); closeContextMenu(); }} onDelete={() => { handleDelete(); closeContextMenu(); }} onClose={closeContextMenu} />}
