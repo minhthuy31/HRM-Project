@@ -31,6 +31,7 @@ const EmployeeModal = ({
         const { name, value, type, checked } = e.target;
         setFormData(p => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
     };
+
     
     const handleDateChange = (date, name) => {
         setFormData(p => ({ ...p, [name]: date }));

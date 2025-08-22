@@ -225,7 +225,7 @@
 /* Modal thêm nhân viên (rộng thoáng hơn) */
 .modal-content {
   width: 80%;         /* gần full màn hình */
-  max-width: 900px;  /* tối đa 1400px */
+  max-width: 700px;  /* tối đa 1400px */
   max-height: 90vh;   /* cao tối đa 90% chiều cao màn hình */
   overflow-y: auto;   /* scroll trong modal */
   padding: 40px;      /* padding thoáng hơn */

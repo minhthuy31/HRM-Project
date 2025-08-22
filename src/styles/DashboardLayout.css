@@ -89,7 +89,6 @@ li a:hover {
   height: 100vh;
   padding: 20px;
   background: var(--main-bg);
-  overflow-y: auto;
   flex-grow: 1;
   transition: margin-left 0.3s ease;
 }

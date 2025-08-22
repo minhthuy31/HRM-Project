@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api } from '../api';
-import '../styles/LoginPage.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../api";
+import "../styles/LoginPage.css";
 
 function ForgotPasswordPage() {
-  const [username, setUsername] = useState('');
-  const [message, setMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/Auth/forgot-password', { username });
+      const response = await api.post("/Auth/forgot-password", { username });
       setMessage(response.data.message);
     } catch (err) {
-      setMessage('Đã có lỗi xảy ra, vui lòng thử lại.');
+      setMessage("Đã có lỗi xảy ra, vui lòng thử lại.");
     }
   };
 
@@ -22,8 +22,9 @@ function ForgotPasswordPage() {
     <div className="login-container">
       <div className="login-box">
         <h2>Quên Mật Khẩu</h2>
-        <p style={{ color: '#666', marginBottom: '20px' }}>
-          Nhập tên đăng nhập của bạn. Một liên kết sẽ được gửi đến địa chỉ email đã đăng ký cho tài khoản này.
+        <p style={{ color: "#666", marginBottom: "20px" }}>
+          Nhập tên đăng nhập của bạn. Một liên kết sẽ được gửi đến địa chỉ email
+          đã đăng ký cho tài khoản này.
         </p>
 
         {message && <div className="alert alert-success">{message}</div>}
@@ -38,8 +39,14 @@ function ForgotPasswordPage() {
               required
             />
           </div>
-          <button className="btn-submit" type="submit">Gửi yêu cầu</button>
-          <button type="button" className="btn-link" onClick={() => navigate('/login')}>
+          <button className="btn-submit" type="submit">
+            Gửi yêu cầu
+          </button>
+          <button
+            type="button"
+            className="btn-link"
+            onClick={() => navigate("/login")}
+          >
             Quay lại Đăng nhập
           </button>
         </form>
