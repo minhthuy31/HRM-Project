@@ -353,3 +353,33 @@
 .dropdown-menu .dropdown-button:hover {
   background-color: var(--hover-bg); /* Giống hiệu ứng hover của thẻ <a> */
 }
+
+.actions-cell {
+    text-align: right; /* Căn nút 3 chấm về bên phải */
+    position: relative; /* Cần thiết để định vị context-menu */
+    width: 60px; /* Cho cột có độ rộng cố định */
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--main-text);
+}
+
+.action-btn:hover {
+    background-color: var(--hover-bg);
+}
+
+/* Style cho menu khi hiển thị trong bảng */
+.context-menu.in-table {
+    position: absolute;
+    top: 30px; 
+    right: 15px;
+    left: auto;
+}

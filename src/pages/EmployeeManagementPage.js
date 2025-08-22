@@ -8,6 +8,7 @@ import {
   FaPlus,
   FaUserCircle,
   FaSearch,
+  FaEllipsisV,
 } from "react-icons/fa";
 import "../styles/EmployeePage.css";
 import EmployeeModal from "../components/modals/EmployeeModal";
@@ -59,6 +60,7 @@ const EmployeePage = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedPhongBan, setSelectedPhongBan] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeContextMenu, setActiveContextMenu] = useState(null);
 
   const fetchData = useCallback(
     async (filterPhongBan = "", currentSearchTerm = "") => {
@@ -93,6 +95,13 @@ const EmployeePage = () => {
     []
   );
 
+  const handleToggleContextMenu = (e, employee) => {
+    e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+    setActiveContextMenu((prev) =>
+      prev === employee.maNhanVien ? null : employee.maNhanVien
+    );
+  };
+
   useEffect(() => {
     const timer = setTimeout(
       () => fetchData(selectedPhongBan, searchTerm),
@@ -100,6 +109,12 @@ const EmployeePage = () => {
     );
     return () => clearTimeout(timer);
   }, [fetchData, selectedPhongBan, searchTerm]);
+
+  useEffect(() => {
+    const handleClickOutside = () => setActiveContextMenu(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   const handleFilterChange = (e) => setSelectedPhongBan(e.target.value);
   const handleSearchChange = (e) => setSearchTerm(e.target.value);
@@ -249,6 +264,7 @@ const EmployeePage = () => {
                   <th>Chức vụ</th>
                   <th>Phòng ban</th>
                   <th>Trạng thái</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -278,6 +294,30 @@ const EmployeePage = () => {
                     <td>{emp.tenChucVu}</td>
                     <td>{emp.tenPhongBan}</td>
                     <td>{emp.trangThai ? "Hoạt động" : "Đã nghỉ"}</td>
+                    <td className="actions-cell">
+                      <button
+                        className="action-btn"
+                        onClick={(e) => handleToggleContextMenu(e, emp)}
+                      >
+                        <FaEllipsisV />
+                      </button>
+                      {/* Hiển thị menu nếu đúng là của nhân viên này */}
+                      {activeContextMenu === emp.maNhanVien && (
+                        <div className="context-menu in-table">
+                          <ul>
+                            <li onClick={() => handleAction("view", emp)}>
+                              <FaEye /> Xem chi tiết
+                            </li>
+                            <li onClick={() => handleAction("edit", emp)}>
+                              <FaEdit /> Chỉnh sửa
+                            </li>
+                            <li onClick={() => handleAction("delete", emp)}>
+                              <FaTrash /> Xóa
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

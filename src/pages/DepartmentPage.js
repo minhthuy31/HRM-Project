@@ -8,6 +8,7 @@ import {
   FaPlus,
   FaSearch,
   FaUsers,
+  FaEllipsisV,
 } from "react-icons/fa";
 import "../styles/DepartmentPage.css";
 import DepartmentModal from "../components/modals/DepartmentModal";
@@ -63,6 +64,7 @@ const DepartmentPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEmployeeListModalOpen, setIsEmployeeListModalOpen] = useState(false);
+  const [activeContextMenu, setActiveContextMenu] = useState(null);
 
   const fetchData = useCallback(async (currentSearchTerm = "") => {
     setLoading(true);
@@ -77,6 +79,20 @@ const DepartmentPage = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleToggleContextMenu = (e, department) => {
+    e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+    setActiveContextMenu((prev) =>
+      prev === department.maPhongBan ? null : department.maPhongBan
+    );
+  };
+
+  // Thêm useEffect này để đóng menu khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = () => setActiveContextMenu(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -186,6 +202,7 @@ const DepartmentPage = () => {
                   <th>Tên phòng ban</th>
                   <th>Địa chỉ</th>
                   <th>Số điện thoại</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -200,6 +217,32 @@ const DepartmentPage = () => {
                     </td>
                     <td>{dept.diaChi}</td>
                     <td>{dept.sdt_PhongBan}</td>
+                    <td className="actions-cell">
+                      <button
+                        className="action-btn"
+                        onClick={(e) => handleToggleContextMenu(e, dept)}
+                      >
+                        <FaEllipsisV />
+                      </button>
+                      {activeContextMenu === dept.maPhongBan && (
+                        <div className="context-menu in-table">
+                          <ul>
+                            <li onClick={() => handleViewEmployees(dept)}>
+                              <FaUsers /> Xem nhân viên
+                            </li>
+                            <li onClick={() => handleViewDetails(dept)}>
+                              <FaEye /> Xem chi tiết
+                            </li>
+                            <li onClick={() => handleEdit(dept)}>
+                              <FaEdit /> Chỉnh sửa
+                            </li>
+                            <li onClick={() => handleDelete(dept)}>
+                              <FaTrash /> Xóa
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

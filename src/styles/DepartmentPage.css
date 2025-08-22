@@ -166,3 +166,18 @@
   cursor: pointer;
   margin-top: 10px;
 }
+
+/* Style cho khung menu chính */
+.context-menu.in-table {
+  min-width: 160px; /* Giảm chiều rộng tối thiểu của menu */
+  padding: 5px 0;   /* Thêm padding dọc cho gọn gàng */
+}
+
+/* Style cho mỗi mục trong menu */
+.context-menu li {
+  padding: 8px 12px; /* Điều chỉnh lại padding */
+  gap: 0;            /* Xóa khoảng cách giữa icon và chữ */
+  gap: 10px; 
+}
+
+
