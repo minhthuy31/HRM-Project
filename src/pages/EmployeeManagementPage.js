@@ -19,29 +19,41 @@ const getImageUrl = (path) => {
   return `http://localhost:5260${path}`;
 };
 
-const ContextMenu = ({ x, y, onShowInfo, onEdit, onDelete, onClose }) => {
+// --- ContextMenu ---
+const ContextMenu = ({ employee, onAction, onClose, x, y }) => {
   useEffect(() => {
     const handleClickOutside = () => onClose();
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [onClose]);
+
   return (
     <div className="context-menu" style={{ top: y, left: x }}>
       <ul>
-        <li onClick={onShowInfo}>
+        <li onClick={() => onAction("view", employee)}>
           <FaEye /> Xem chi tiết
         </li>
-        <li onClick={onEdit}>
+        <li onClick={() => onAction("edit", employee)}>
           <FaEdit /> Chỉnh sửa
         </li>
-        <li onClick={onDelete}>
-          <FaTrash /> Xóa
+        <li onClick={() => onAction("delete", employee)}>
+          <FaTrash /> Vô hiệu hóa
+        </li>
+      </ul>
+      <hr />
+      <ul>
+        <li onClick={() => onAction("view-external", employee)}>
+          <FaEye /> Xem chi tiết ngoài
+        </li>
+        <li onClick={() => onAction("edit-external", employee)}>
+          <FaEdit /> Chỉnh sửa ngoài
         </li>
       </ul>
     </div>
   );
 };
 
+// --- COMPONENT TRANG CHÍNH ---
 const EmployeePage = () => {
   const [employees, setEmployees] = useState([]);
   const [phongBans, setPhongBans] = useState([]);
@@ -50,136 +62,138 @@ const EmployeePage = () => {
   const [trinhDoHocVans, setTrinhDoHocVans] = useState([]);
   const [hopDongs, setHopDongs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [contextMenu, setContextMenu] = useState({
-    visible: false,
+
+  const [activeMenu, setActiveMenu] = useState({
+    id: null,
     x: 0,
     y: 0,
   });
-  const [currentEmployee, setCurrentEmployee] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedPhongBan, setSelectedPhongBan] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeContextMenu, setActiveContextMenu] = useState(null);
 
-  const fetchData = useCallback(
-    async (filterPhongBan = "", currentSearchTerm = "") => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (filterPhongBan) params.append("maPhongBan", filterPhongBan);
-        if (currentSearchTerm) params.append("searchTerm", currentSearchTerm);
-        const employeeUrl = `/NhanVien?${params.toString()}`;
+  const [modal, setModal] = useState({ type: null, data: null });
 
-        const [empRes, pbRes, cvRes, cnRes, tdRes, hdRes] = await Promise.all([
-          api.get(employeeUrl),
-          api.get("/PhongBan"),
-          api.get("/ChucVuNhanVien"),
-          api.get("/ChuyenNganh"),
-          api.get("/TrinhDoHocVan"),
-          api.get("/HopDong"),
-        ]);
+  const [filters, setFilters] = useState({
+    selectedPhongBan: "",
+    searchTerm: "",
+  });
 
-        setEmployees(empRes.data);
-        setPhongBans(pbRes.data);
-        setChucVus(cvRes.data);
-        setChuyenNganhs(cnRes.data);
-        setTrinhDoHocVans(tdRes.data);
-        setHopDongs(hdRes.data);
-      } catch (error) {
-        console.error("Failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.selectedPhongBan)
+        params.append("maPhongBan", filters.selectedPhongBan);
+      if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
+      const employeeUrl = `/NhanVien?${params.toString()}`;
 
-  const handleToggleContextMenu = (e, employee) => {
-    e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
-    setActiveContextMenu((prev) =>
-      prev === employee.maNhanVien ? null : employee.maNhanVien
-    );
-  };
+      const [empRes, pbRes, cvRes, cnRes, tdRes, hdRes] = await Promise.all([
+        api.get(employeeUrl),
+        api.get("/PhongBan"),
+        api.get("/ChucVuNhanVien"),
+        api.get("/ChuyenNganh"),
+        api.get("/TrinhDoHocVan"),
+        api.get("/HopDong"),
+      ]);
+
+      setEmployees(empRes.data);
+      setPhongBans(pbRes.data);
+      setChucVus(cvRes.data);
+      setChuyenNganhs(cnRes.data);
+      setTrinhDoHocVans(tdRes.data);
+      setHopDongs(hdRes.data);
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
 
   useEffect(() => {
-    const timer = setTimeout(
-      () => fetchData(selectedPhongBan, searchTerm),
-      500
-    );
+    const timer = setTimeout(() => fetchData(), 500);
     return () => clearTimeout(timer);
-  }, [fetchData, selectedPhongBan, searchTerm]);
+  }, [fetchData]);
 
   useEffect(() => {
-    const handleClickOutside = () => setActiveContextMenu(null);
+    const handleClickOutside = () => setActiveMenu({ id: null, x: 0, y: 0 });
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const handleFilterChange = (e) => setSelectedPhongBan(e.target.value);
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
+  const handleFilterChange = (e) =>
+    setFilters((f) => ({ ...f, selectedPhongBan: e.target.value }));
+  const handleSearchChange = (e) =>
+    setFilters((f) => ({ ...f, searchTerm: e.target.value }));
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchData(selectedPhongBan, searchTerm);
+    fetchData();
   };
 
-  const handleContextMenu = (e, employee, dept) => {
+  const handleToggleMenu = (e, employee) => {
     e.preventDefault();
-    const windowHeight = window.innerHeight;
-    const menuHeight = 120;
-    let yPosition = e.pageY;
-    setCurrentEmployee(employee);
-    // Nếu vị trí mở menu sắp tràn dưới màn hình, đẩy menu lên trên
-    if (yPosition + menuHeight > windowHeight) {
-      yPosition = e.pageY - menuHeight;
+    e.stopPropagation();
+
+    const menuWidth = 200;
+    const menuHeight = 200;
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 10;
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 10;
     }
 
-    setContextMenu({
-      visible: true,
-      x: e.pageX,
-      y: yPosition,
-      employee: dept,
-    });
-  };
-
-  const closeContextMenu = () => setContextMenu({ visible: false, x: 0, y: 0 });
-
-  const handleAdd = () => {
-    setCurrentEmployee(null);
-    setIsEditModalOpen(true);
+    setActiveMenu({ id: employee.maNhanVien, x, y });
   };
 
   const handleAction = async (actionType, employee) => {
-    setCurrentEmployee(employee);
-    closeContextMenu();
+    setActiveMenu({ id: null, x: 0, y: 0 });
+
+    if (actionType === "view") {
+      try {
+        const response = await api.get(`/NhanVien/${employee.maNhanVien}`);
+        setModal({ type: "view", data: response.data });
+      } catch (error) {
+        alert("Không thể tải dữ liệu để xem.");
+      }
+      return;
+    }
+
+    if (actionType === "edit") {
+      try {
+        const response = await api.get(`/NhanVien/${employee.maNhanVien}`);
+        setModal({ type: "edit", data: response.data });
+      } catch (error) {
+        alert("Không thể tải dữ liệu để sửa.");
+      }
+      return;
+    }
 
     if (actionType === "delete") {
-      if (window.confirm(`Bạn có chắc muốn xóa nhân viên ${employee.hoTen}?`)) {
+      if (
+        window.confirm(
+          `Bạn có chắc muốn vô hiệu hóa nhân viên ${employee.hoTen}?`
+        )
+      ) {
         try {
           await api.delete(`/NhanVien/${employee.maNhanVien}`);
-          fetchData(selectedPhongBan, searchTerm);
+          fetchData();
         } catch (error) {
-          alert(error.response?.data || "Lỗi khi xóa.");
+          alert(error.response?.data || "Lỗi khi vô hiệu hóa.");
         }
       }
       return;
     }
 
-    if (actionType === "add") {
-      setCurrentEmployee(null);
-      setIsEditModalOpen(true);
+    if (actionType === "view-external") {
+      window.open(`/nhan-vien/${employee.maNhanVien}`, "_blank");
       return;
     }
 
-    if (actionType === "edit" || actionType === "view") {
-      try {
-        const response = await api.get(`/NhanVien/${employee.maNhanVien}`);
-        setCurrentEmployee(response.data);
-        if (actionType === "edit") setIsEditModalOpen(true);
-        else setIsViewModalOpen(true);
-      } catch (error) {
-        alert("Không thể tải chi tiết nhân viên.");
-      }
+    if (actionType === "edit-external") {
+      window.open(`/nhan-vien/${employee.maNhanVien}/edit`, "_blank");
+      return;
     }
   };
 
@@ -197,15 +211,13 @@ const EmployeePage = () => {
         });
         dataToSave.hinhAnh = uploadRes.data.filePath;
       }
-
-      if (currentEmployee) {
-        await api.put(`/NhanVien/${currentEmployee.maNhanVien}`, dataToSave);
+      if (modal.data) {
+        await api.put(`/NhanVien/${modal.data.maNhanVien}`, dataToSave);
       } else {
         await api.post("/NhanVien", dataToSave);
       }
-
-      setIsEditModalOpen(false);
-      fetchData(selectedPhongBan, searchTerm);
+      setModal({ type: null, data: null });
+      fetchData();
     } catch (error) {
       const errorMsg = error.response?.data?.errors
         ? JSON.stringify(error.response.data.errors)
@@ -226,15 +238,14 @@ const EmployeePage = () => {
                 <input
                   type="text"
                   placeholder="Tìm kiếm..."
-                  value={searchTerm}
+                  value={filters.searchTerm}
                   onChange={handleSearchChange}
                 />
               </div>
             </form>
             <div className="filter-container">
               <select
-                id="phongban-filter"
-                value={selectedPhongBan}
+                value={filters.selectedPhongBan}
                 onChange={handleFilterChange}
               >
                 <option value="">Tất cả phòng ban</option>
@@ -245,16 +256,18 @@ const EmployeePage = () => {
                 ))}
               </select>
             </div>
-            <button onClick={handleAdd} className="add-btn">
+            <button
+              onClick={() => setModal({ type: "edit", data: null })}
+              className="add-btn"
+            >
               <FaPlus /> Thêm mới
             </button>
           </div>
         </div>
-
-        {loading ? (
-          <p>Đang tải...</p>
-        ) : (
-          <div className="table-container">
+        <div className="table-container">
+          {loading ? (
+            <p>Đang tải...</p>
+          ) : (
             <table className="employee-table">
               <thead>
                 <tr>
@@ -264,7 +277,7 @@ const EmployeePage = () => {
                   <th>Chức vụ</th>
                   <th>Phòng ban</th>
                   <th>Trạng thái</th>
-                  <th></th>
+                  <th style={{ width: "60px" }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -278,14 +291,11 @@ const EmployeePage = () => {
                           className="table-avatar"
                         />
                       ) : (
-                        <FaUserCircle
-                          size={30}
-                          style={{ color: "var(--toggle-icon-color)" }}
-                        />
+                        <FaUserCircle size={30} />
                       )}
                     </td>
                     <td
-                      onContextMenu={(e) => handleContextMenu(e, emp)}
+                      onContextMenu={(e) => handleToggleMenu(e, emp)}
                       className="employee-name-cell"
                     >
                       {emp.hoTen}
@@ -297,55 +307,35 @@ const EmployeePage = () => {
                     <td className="actions-cell">
                       <button
                         className="action-btn"
-                        onClick={(e) => handleToggleContextMenu(e, emp)}
+                        onClick={(e) => handleToggleMenu(e, emp)}
                       >
                         <FaEllipsisV />
                       </button>
-                      {/* Hiển thị menu nếu đúng là của nhân viên này */}
-                      {activeContextMenu === emp.maNhanVien && (
-                        <div className="context-menu in-table">
-                          <ul>
-                            <li onClick={() => handleAction("view", emp)}>
-                              <FaEye /> Xem chi tiết
-                            </li>
-                            <li onClick={() => handleAction("edit", emp)}>
-                              <FaEdit /> Chỉnh sửa
-                            </li>
-                            <li onClick={() => handleAction("delete", emp)}>
-                              <FaTrash /> Xóa
-                            </li>
-                          </ul>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {contextMenu.visible && (
+      {activeMenu.id && (
         <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onShowInfo={() => handleAction("view", currentEmployee)}
-          onEdit={() => handleAction("edit", currentEmployee)}
-          onDelete={() => handleAction("delete", currentEmployee)}
-          onClose={closeContextMenu}
+          employee={employees.find((e) => e.maNhanVien === activeMenu.id)}
+          onAction={handleAction}
+          onClose={() => setActiveMenu({ id: null, x: 0, y: 0 })}
+          x={activeMenu.x}
+          y={activeMenu.y}
         />
       )}
 
-      {(isViewModalOpen || isEditModalOpen) && (
+      {modal.type && (
         <EmployeeModal
-          employee={currentEmployee}
-          onCancel={() => {
-            setIsViewModalOpen(false);
-            setIsEditModalOpen(false);
-          }}
+          employee={modal.data}
+          onCancel={() => setModal({ type: null, data: null })}
           onSave={handleSave}
-          isViewOnly={isViewModalOpen}
+          isViewOnly={modal.type === "view"}
           phongBans={phongBans}
           chucVus={chucVus}
           chuyenNganhs={chuyenNganhs}
