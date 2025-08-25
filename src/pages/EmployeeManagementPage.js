@@ -261,7 +261,7 @@ const EmployeePage = () => {
             </form>
             <div className="filter-container">
               <select
-                name="selectedPhongBan" // <-- Thêm name
+                name="selectedPhongBan"
                 value={filters.selectedPhongBan}
                 onChange={handleFilterChange} // <-- Dùng hàm chung
               >
@@ -275,18 +275,20 @@ const EmployeePage = () => {
             </div>
 
             {/* THÊM MỚI BỘ LỌC CHỨC VỤ */}
-            <select
-              name="selectedChucVu"
-              value={filters.selectedChucVu}
-              onChange={handleFilterChange}
-            >
-              <option value="">Tất cả chức vụ</option>
-              {chucVus.map((cv) => (
-                <option key={cv.maChucVuNV} value={cv.maChucVuNV}>
-                  {cv.tenChucVu}
-                </option>
-              ))}
-            </select>
+            <div>
+              <select
+                name="selectedChucVu"
+                value={filters.selectedChucVu}
+                onChange={handleFilterChange}
+              >
+                <option value="">Tất cả chức vụ</option>
+                {chucVus.map((cv) => (
+                  <option key={cv.maChucVuNV} value={cv.maChucVuNV}>
+                    {cv.tenChucVu}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* THÊM MỚI BỘ LỌC TRẠNG THÁI */}
             <div className="filter-container">

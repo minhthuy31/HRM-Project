@@ -475,3 +475,31 @@
 .employee-edit-page .save-btn:hover {
   background-color: #0056b3;
 }
+
+/* CSS for Edit Page Avatar */
+.avatar-edit-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.avatar-edit-button {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border: 2px solid white;
+  transition: background-color 0.2s;
+}
+
+.avatar-edit-button:hover {
+  background-color: #0056b3;
+}

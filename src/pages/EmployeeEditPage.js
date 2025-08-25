@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
-import { FaArrowLeft, FaUserCircle } from "react-icons/fa";
+import { FaArrowLeft, FaUserCircle, FaCamera } from "react-icons/fa";
 import "../styles/EmployeePage.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 
 const getImageUrl = (path) => {
   if (!path) return null;
+  if (path.startsWith("blob:")) return path;
   return `http://localhost:5260${path}`;
 };
 
@@ -19,6 +20,9 @@ const EmployeeEditPage = () => {
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -35,19 +39,54 @@ const EmployeeEditPage = () => {
     fetchEmployee();
   }, [employeeId]);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEmployee({ ...employee, [name]: value });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
   const handleSave = async () => {
+    if (!employee) return;
+
+    let dataToSave = { ...employee };
+
     try {
-      await api.put(`/NhanVien/${employee.maNhanVien}`, employee);
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+
+        const uploadRes = await api.post("/NhanVien/UploadImage", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        dataToSave.hinhAnh = uploadRes.data.filePath;
+      }
+
+      await api.put(`/NhanVien/${dataToSave.maNhanVien}`, dataToSave);
+
       alert("Cập nhật thành công!");
-      navigate(`/nhan-vien/${employee.maNhanVien}`);
+      navigate(`/nhan-vien/${dataToSave.maNhanVien}`);
     } catch (err) {
       console.error("Lỗi khi lưu:", err);
-      alert("Lưu thất bại!");
+      const errorMsg =
+        err.response?.data?.errors || err.response?.data || "Lưu thất bại!";
+      alert(JSON.stringify(errorMsg));
     }
   };
 
@@ -58,6 +97,8 @@ const EmployeeEditPage = () => {
       </DashboardLayout>
     );
   }
+
+  const displayImage = imagePreview || getImageUrl(employee.hinhAnh);
 
   return (
     <DashboardLayout>
@@ -70,15 +111,30 @@ const EmployeeEditPage = () => {
 
         <div className="detail-card">
           <div className="detail-header">
-            {employee.hinhAnh ? (
-              <img
-                src={getImageUrl(employee.hinhAnh)}
-                alt={employee.hoTen}
-                className="detail-avatar"
+            <div className="avatar-edit-container">
+              {displayImage ? (
+                <img
+                  src={displayImage}
+                  alt={employee.hoTen}
+                  className="detail-avatar"
+                />
+              ) : (
+                <FaUserCircle
+                  size={100}
+                  className="detail-avatar-placeholder"
+                />
+              )}
+              <label htmlFor="avatar-upload" className="avatar-edit-button">
+                <FaCamera />
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ display: "none" }}
               />
-            ) : (
-              <FaUserCircle size={100} className="detail-avatar-placeholder" />
-            )}
+            </div>
             <div className="detail-header-info">
               <h1>Chỉnh sửa nhân viên</h1>
               <p>{employee.maNhanVien}</p>
@@ -244,6 +300,7 @@ const EmployeeEditPage = () => {
                 name="tenChuyenNganh"
                 value={employee.tenChuyenNganh || ""}
                 onChange={handleChange}
+                readOnly // Usually comes from a related table, should be read-only
               />
             </div>
             <div className="form-group">
@@ -253,6 +310,7 @@ const EmployeeEditPage = () => {
                 name="tenTrinhDoHocVan"
                 value={employee.tenTrinhDoHocVan || ""}
                 onChange={handleChange}
+                readOnly // Usually comes from a related table, should be read-only
               />
             </div>
             <div className="form-group">
@@ -268,16 +326,17 @@ const EmployeeEditPage = () => {
               <label>Trạng thái:</label>
               <select
                 name="trangThai"
-                value={employee.trangThai ? 1 : 0}
+                // Use boolean for value to be safe
+                value={employee.trangThai}
                 onChange={(e) =>
                   setEmployee({
                     ...employee,
-                    trangThai: e.target.value === "1",
+                    trangThai: e.target.value === "true",
                   })
                 }
               >
-                <option value={1}>Đang hoạt động</option>
-                <option value={0}>Đã nghỉ việc</option>
+                <option value={true}>Đang hoạt động</option>
+                <option value={false}>Đã nghỉ việc</option>
               </select>
             </div>
             <div className="form-actions">
