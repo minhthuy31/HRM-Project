@@ -74,6 +74,9 @@ const EmployeePage = () => {
   const [filters, setFilters] = useState({
     selectedPhongBan: "",
     searchTerm: "",
+    selectedChucVu: "",
+    selectedTrangThai: "",
+    selectedTrinhDo: "",
   });
 
   const fetchData = useCallback(async () => {
@@ -82,6 +85,12 @@ const EmployeePage = () => {
       const params = new URLSearchParams();
       if (filters.selectedPhongBan)
         params.append("maPhongBan", filters.selectedPhongBan);
+      if (filters.selectedChucVu)
+        params.append("maChucVuNV", filters.selectedChucVu);
+      if (filters.selectedTrangThai !== "")
+        params.append("trangthai", filters.selectedTrangThai);
+      if (filters.selectedTrinhDo)
+        params.append("maTrinhDoHocVan", filters.selectedTrinhDo);
       if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
       const employeeUrl = `/NhanVien?${params.toString()}`;
 
@@ -118,8 +127,15 @@ const EmployeePage = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const handleFilterChange = (e) =>
-    setFilters((f) => ({ ...f, selectedPhongBan: e.target.value }));
+  //hàm chung xử lý lọc
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+  };
+
   const handleSearchChange = (e) =>
     setFilters((f) => ({ ...f, searchTerm: e.target.value }));
   const handleSearchSubmit = (e) => {
@@ -245,13 +261,57 @@ const EmployeePage = () => {
             </form>
             <div className="filter-container">
               <select
+                name="selectedPhongBan" // <-- Thêm name
                 value={filters.selectedPhongBan}
-                onChange={handleFilterChange}
+                onChange={handleFilterChange} // <-- Dùng hàm chung
               >
                 <option value="">Tất cả phòng ban</option>
                 {phongBans.map((pb) => (
                   <option key={pb.maPhongBan} value={pb.maPhongBan}>
                     {pb.tenPhongBan}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* THÊM MỚI BỘ LỌC CHỨC VỤ */}
+            <select
+              name="selectedChucVu"
+              value={filters.selectedChucVu}
+              onChange={handleFilterChange}
+            >
+              <option value="">Tất cả chức vụ</option>
+              {chucVus.map((cv) => (
+                <option key={cv.maChucVuNV} value={cv.maChucVuNV}>
+                  {cv.tenChucVu}
+                </option>
+              ))}
+            </select>
+
+            {/* THÊM MỚI BỘ LỌC TRẠNG THÁI */}
+            <div className="filter-container">
+              <select
+                name="selectedTrangThai"
+                value={filters.selectedTrangThai}
+                onChange={handleFilterChange}
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="true">Hoạt động</option>
+                <option value="false">Đã nghỉ</option>
+              </select>
+            </div>
+
+            {/* THÊM MỚI BỘ LỌC TRÌNH ĐỘ HỌC VẤN */}
+            <div className="filter-container">
+              <select
+                name="selectedTrinhDo"
+                value={filters.selectedTrinhDo}
+                onChange={handleFilterChange}
+              >
+                <option value="">Tất cả trình độ</option>
+                {trinhDoHocVans.map((td) => (
+                  <option key={td.maTrinhDoHocVan} value={td.maTrinhDoHocVan}>
+                    {td.tenTrinhDo}
                   </option>
                 ))}
               </select>
