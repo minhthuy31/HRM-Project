@@ -1,4 +1,3 @@
-// src/App.js
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -19,7 +18,6 @@ import ReportsPage from "./pages/ReportsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
 import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 import EmployeeEditPage from "./pages/EmployeeEditPage";
 
@@ -30,7 +28,6 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/dashboard" element={<Dashboard />} />

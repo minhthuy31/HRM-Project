@@ -312,3 +312,7 @@ INSERT INTO ThoiViecs (MaThoiViec, MaNhanVien, LyDo, NgayThoiViec) VALUES
 ('TV03', 'NV03', N'Hết hợp đồng', '2025-07-01'),
 ('TV04', 'NV04', N'Sức khỏe không đảm bảo', '2025-07-10'),
 ('TV05', 'NV05', N'Khác', '2025-07-20');
+
+
+
+select *from NhanViens

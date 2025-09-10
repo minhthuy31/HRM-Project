@@ -1,16 +1,15 @@
 // src/api.js
-import axios from 'axios';
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: 'http://localhost:5260/api', // Địa chỉ API của bạn
+  baseURL: "http://localhost:5260/api", // địa chỉ ip của api
 });
 
-// Thêm một "interceptor" để tự động thêm token vào header
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
-      config.headers['Authorization'] = 'Bearer ' + token;
+      config.headers["Authorization"] = "Bearer " + token;
     }
     return config;
   },

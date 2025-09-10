@@ -12,7 +12,7 @@ const DashboardLayout = ({ children }) => {
     () => localStorage.getItem("darkMode") === "true"
   );
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [nhanVien, setNhanVien] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const DashboardLayout = ({ children }) => {
     const fetchCurrentUser = async () => {
       try {
         const response = await api.get("/Auth/me");
-        setUser(response.data);
+        setNhanVien(response.data);
       } catch (error) {
         console.error("Lỗi khi lấy thông tin người dùng:", error);
         if (error.response?.status === 401) {
@@ -190,7 +190,7 @@ const DashboardLayout = ({ children }) => {
 
           <div className="avatar-container">
             <div className="avatar">
-              {user ? user.username.charAt(0).toUpperCase() : ""}
+              {nhanVien?.hoTen ? nhanVien.hoTen.charAt(0).toUpperCase() : ""}
             </div>
             <div className="avatar-hover-zone"></div>
             <div className="dropdown-menu">

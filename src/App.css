@@ -1,0 +1,109 @@
+/* ==========================================================================
+   1. CSS Resets & Box Sizing - Đảm bảo hiển thị nhất quán trên mọi trình duyệt
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box; /* Cách tính kích thước box dễ đoán hơn */
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   2. CSS Custom Properties (Variables) - Quản lý các giá trị chung
+   ========================================================================== */
+
+:root {
+  /* Màu sắc */
+  --primary-color: #0d6efd;   /* Màu chính */
+  --secondary-color: #6c757d; /* Màu phụ */
+  --success-color: #198754;  /* Màu thành công */
+  --danger-color: #dc3545;   /* Màu cảnh báo */
+  --text-color: #212529;      /* Màu chữ chính */
+  --background-color: #ffffff; /* Màu nền */
+  --light-gray: #f8f9fa;      /* Màu xám nhạt */
+
+  /* Font chữ */
+  --font-family-main: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+
+  /* Spacing - Khoảng cách */
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 32px;
+
+  /* Khác */
+  --header-height: 60px; /* Chiều cao header để tính toán layout */
+  --border-radius: 4px;  /* Bo góc */
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Đổ bóng */
+}
+
+/* ==========================================================================
+   3. Global Styles - Các style áp dụng cho toàn bộ trang
+   ========================================================================== */
+
+body {
+  font-family: var(--font-family-main);
+  color: var(--text-color);
+  background-color: var(--background-color);
+  line-height: 1.6; /* Giãn dòng dễ đọc */
+  -webkit-font-smoothing: antialiased; /* Hiển thị font mượt hơn trên Mac */
+  -moz-osx-font-smoothing: grayscale; /* Hiển thị font mượt hơn trên Firefox */
+  scroll-behavior: smooth; /* Hiệu ứng cuộn mượt */
+}
+
+/* Đảm bảo media (ảnh, video) không bao giờ tràn ra ngoài container */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ==========================================================================
+   4. Reusable Container - Một lớp tiện ích để bao bọc và căn giữa nội dung
+   ========================================================================== */
+
+.container {
+  width: 100%; /* Chiếm 90% chiều rộng trên màn hình nhỏ */
+  max-width: 1200px; /* Chiều rộng tối đa trên màn hình lớn */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ==========================================================================
+   5. YOUR CUSTOM MEDIA QUERIES - Thêm code responsive của bạn ở đây!
+   ========================================================================== */
+
+/* Thiết lập cho màn hình máy tính bảng trở lên */
+/* (min-width: 768px) */
+@media (min-width: 48em) {
+  /* Ví dụ: Thay đổi layout của sidebar, grid, ... */
+  /*
+  .your-sidebar {
+    display: block;
+  }
+
+  .your-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  */
+}
+
+/* Thiết lập cho màn hình máy tính để bàn trở lên */
+/* (min-width: 1024px) */
+@media (min-width: 64em) {
+  /* Ví dụ: Tăng kích thước font chữ cho dễ đọc hơn */
+  /*
+  body {
+    font-size: 1.125rem;
+  }
+
+  .your-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  */
+}

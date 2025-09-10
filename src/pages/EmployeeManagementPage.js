@@ -263,7 +263,7 @@ const EmployeePage = () => {
               <select
                 name="selectedPhongBan"
                 value={filters.selectedPhongBan}
-                onChange={handleFilterChange} // <-- Dùng hàm chung
+                onChange={handleFilterChange} //Dùng hàm chung
               >
                 <option value="">Tất cả phòng ban</option>
                 {phongBans.map((pb) => (
@@ -275,7 +275,7 @@ const EmployeePage = () => {
             </div>
 
             {/* THÊM MỚI BỘ LỌC CHỨC VỤ */}
-            <div>
+            <div className="filter-container">
               <select
                 name="selectedChucVu"
                 value={filters.selectedChucVu}
