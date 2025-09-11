@@ -14,7 +14,7 @@ import "../styles/DepartmentPage.css";
 import DepartmentModal from "../components/modals/DepartmentModal";
 import EmployeeListModal from "../components/modals/EmployeeListModal";
 
-// Tách ContextMenu ra để dễ quản lý
+// tách ContextMenu ra để dễ quản lý
 const ContextMenu = ({
   x,
   y,
@@ -82,13 +82,13 @@ const DepartmentPage = () => {
   }, []);
 
   const handleToggleContextMenu = (e, department) => {
-    e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+    e.stopPropagation();
     setActiveContextMenu((prev) =>
       prev === department.maPhongBan ? null : department.maPhongBan
     );
   };
 
-  // Thêm useEffect này để đóng menu khi click ra ngoài
+  //đóng menu nếu click ra ngoài
   useEffect(() => {
     const handleClickOutside = () => setActiveContextMenu(null);
     document.addEventListener("click", handleClickOutside);
@@ -111,19 +111,19 @@ const DepartmentPage = () => {
   const handleContextMenu = (e, dept) => {
     e.preventDefault();
     const windowHeight = window.innerHeight;
-    const menuHeight = 160; // Chiều cao ước tính của context menu
+    const menuHeight = 160;
     let yPosition = e.pageY;
 
     if (yPosition + menuHeight > windowHeight) {
       yPosition = e.pageY - menuHeight;
     }
-    setCurrentDepartment(dept); // Cập nhật phòng ban đang được chọn
+    setCurrentDepartment(dept);
     setContextMenu({ visible: true, x: e.pageX, y: yPosition });
   };
 
   const closeContextMenu = () => setContextMenu({ visible: false });
 
-  // Các hàm xử lý action từ Context Menu
+  // xử lý trong menu
   const handleAdd = () => {
     setCurrentDepartment(null);
     setIsEditModalOpen(true);

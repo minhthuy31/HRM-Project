@@ -25,7 +25,7 @@ function ChangePasswordPage() {
       setError("Mật khẩu mới phải có ít nhất 6 ký tự.");
       return;
     }
-
+    // gọi đến api change-password
     try {
       await api.post("/Auth/change-password", {
         oldPassword,

@@ -82,28 +82,24 @@ svg {
 /* (min-width: 768px) */
 @media (min-width: 48em) {
   /* Ví dụ: Thay đổi layout của sidebar, grid, ... */
-  /*
-  .your-sidebar {
-    display: block;
-  }
-
-  .your-product-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  */
+ 
+  /* .dashboard-container span.text {
+    font-size: 100px !important;
+  } */
+  
 }
 
 /* Thiết lập cho màn hình máy tính để bàn trở lên */
 /* (min-width: 1024px) */
 @media (min-width: 64em) {
   /* Ví dụ: Tăng kích thước font chữ cho dễ đọc hơn */
-  /*
-  body {
-    font-size: 1.125rem;
-  }
+  
+  /* .dashboard-container span.text {
+    font-size: 100px !important;
+  } */
 
-  .your-product-grid {
+  /* .your-product-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-  */
+  } */
+  
 }

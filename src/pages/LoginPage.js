@@ -17,7 +17,7 @@ function LoginPage() {
       localStorage.setItem("token", response.data.token);
       setMessage("Đăng nhập thành công!");
 
-      setTimeout(() => navigate("/dashboard"), 1000);
+      setTimeout(() => navigate("/dashboard"), 100);
     } catch (err) {
       setMessage(err.response?.data?.message || "Đăng nhập thất bại!");
     }

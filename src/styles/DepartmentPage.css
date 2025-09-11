@@ -1,24 +1,22 @@
-/* Bố cục trang department-page */
+/*    BỐ CỤC TRANG DEPARTMENT */
 .department-page {
-    background-color: var(--card-bg, #ffffff);
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.1));
-    color: var(--main-text);
-    display: flex;
-    flex-direction: column;
-    /* Chiều cao của trang = 100% chiều cao màn hình trừ đi padding và các khoảng trống khác */
-    /* Bạn có thể điều chỉnh số 150px cho phù hợp */
-    height: calc(100vh - 150px); 
+  background-color: var(--card-bg, #ffffff);
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.1));
+  color: var(--main-text);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 150px); 
 }
 
-
+/*   HEADER TRANG*/
 .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0; /* Ngăn header bị co lại */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .page-header h1 {
@@ -34,7 +32,7 @@
 
 .add-btn {
   background-color: #0d6efd;
-  color: white;
+  color: #fff;
   border: none;
   padding: 10px 16px;
   border-radius: 6px;
@@ -45,26 +43,25 @@
   gap: 8px;
 }
 
-/* Container cho bảng để tạo thanh cuộn */
+/*    BẢNG DỮ LIỆU */
 .department-table-container {
-    flex-grow: 1; /* Cho phép container này lấp đầy không gian còn lại */
-    overflow-y: auto; /* Tự động hiển thị thanh cuộn dọc khi cần */
-    border: 1px solid var(--sidebar-border);
-    border-radius: 6px;
+  flex-grow: 1;
+  overflow-y: auto;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 6px;
 }
 
-/* Bảng dữ liệu */
 .department-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
 }
 
 .department-table thead {
-    position: sticky; /* Giữ header của bảng cố định khi cuộn */
-    top: 0;
-    z-index: 2;
-    background-color: var(--hover-bg, #f8f9fa);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--hover-bg, #f8f9fa);
 }
 
 .department-table th,
@@ -81,18 +78,14 @@
   cursor: pointer;
   font-weight: 500;
 }
-
 .department-name-cell:hover {
   color: var(--hover-text);
 }
 
-/* Modal overlay */
+/*    MODAL */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
@@ -100,17 +93,15 @@
   z-index: 1001;
 }
 
-/* Modal content */
 .modal-content {
   background: var(--card-bg);
   color: var(--main-text);
   padding: 30px;
   border-radius: 8px;
-
-  width: 80vw;        /* to ra 80% màn */
-  max-width: 1200px;  /* tối đa 1200px */
-  max-height: 90vh;   /* tránh vượt màn hình */
-  overflow-y: auto;   /* scroll trong modal nếu dài */
+  width: 80vw;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-header {
@@ -132,7 +123,7 @@
   color: var(--main-text);
 }
 
-/* Form trong modal */
+/*   FORM TRONG MODAL */
 .department-form .form-group {
   display: flex;
   flex-direction: column;
@@ -158,7 +149,7 @@
 .btn-submit {
   width: 100%;
   background-color: #0d6efd;
-  color: white;
+  color: #fff;
   border: none;
   padding: 12px;
   border-radius: 6px;
@@ -167,67 +158,85 @@
   margin-top: 10px;
 }
 
-/* Style cho khung menu chính */
+/*    CONTEXT MENU */
 .context-menu.in-table {
-  min-width: 160px; /* Giảm chiều rộng tối thiểu của menu */
-  padding: 5px 0;   /* Thêm padding dọc cho gọn gàng */
+  min-width: 160px;
+  padding: 5px 0;
 }
 
-/* Style cho mỗi mục trong menu */
 .context-menu li {
-  padding: 8px 12px; /* Điều chỉnh lại padding */
-  gap: 0;            /* Xóa khoảng cách giữa icon và chữ */
-  gap: 10px; 
+  padding: 8px 12px;
+  gap: 10px;
 }
 
-/* Thêm vào cuối file EmployeePage.css */
+/* EMPLOYEE LINK */
 .employee-name-link {
-    text-decoration: none;
-    color: var(--main-text);
-    font-weight: 500;
+  text-decoration: none;
+  color: var(--main-text);
+  font-weight: 500;
 }
 .employee-name-link:hover {
-    color: var(--hover-text);
-    text-decoration: underline;
-}
-.employee-detail-page {
-    background-color: var(--card-bg);
-    padding: 24px;
-    border-radius: 8px;
-}
-.back-button {
-    background: none;
-    border: 1px solid var(--sidebar-border);
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 20px;
-    color: var(--main-text);
-}
-.detail-header {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--sidebar-border);
-}
-.detail-avatar, .detail-avatar-placeholder {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-.detail-header-info h1 {
-    margin: 0 0 5px 0;
-}
-.detail-header-info p {
-    margin: 0;
-    color: var(--toggle-icon-color);
+  color: var(--hover-text);
+  text-decoration: underline;
 }
 
+/*    EMPLOYEE DETAIL PAGE */
+.employee-detail-page {
+  background-color: var(--card-bg, #ffffff);
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.1));
+  color: var(--main-text);
+  height: calc(100vh - 150px);
+  overflow-y: auto;
+}
+
+.back-button {
+  background: none;
+  border: 1px solid var(--sidebar-border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: var(--main-text);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.detail-avatar,
+.detail-avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.detail-header-info h1 {
+  margin: 0 0 5px 0;
+}
+
+.detail-header-info p {
+  margin: 0;
+  color: var(--toggle-icon-color);
+}
+
+.detail-card {
+  background-color: var(--hover-bg, #f8f9fa);
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+/*   USAGE GUIDE */
 .usage-guide {
   margin-top: 20px;
   padding: 15px;
@@ -253,23 +262,3 @@
 .usage-guide li {
   margin-bottom: 6px;
 }
-
-/* Trang chi tiết nhân viên */
-.employee-detail-page {
-  background-color: var(--card-bg, #ffffff);
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.1));
-  color: var(--main-text);
-  
-  height: calc(100vh - 150px); /* giống trang list */
-  overflow-y: auto;           /* cho phép cuộn */
-}
-
-.detail-card {
-  background-color: var(--hover-bg, #f8f9fa);
-  padding: 20px;
-  border-radius: 8px;
-  margin-top: 20px;
-}
-

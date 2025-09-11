@@ -1,6 +1,4 @@
-/* ==========================================================================
-   1. BỐ CỤC TRANG CHÍNH (PAGE LAYOUT)
-   ========================================================================== */
+/*   1. BỐ CỤC TRANG CHÍNH (PAGE LAYOUT) */
 .employee-page {
     background-color: var(--card-bg, #ffffff);
     padding: 24px;
@@ -50,9 +48,7 @@
 }
 
 
-/* ==========================================================================
-   2. BỘ LỌC VÀ TÌM KIẾM
-   ========================================================================== */
+/*   2. BỘ LỌC VÀ TÌM KIẾM */
 .filter-container {
     display: flex;
     align-items: center;
@@ -101,9 +97,7 @@
 }
 
 
-/* ==========================================================================
-   3. BẢNG DỮ LIỆU (DATA TABLE)
-   ========================================================================== */
+/*    3. BẢNG DỮ LIỆU (DATA TABLE)*/
 .table-container {
     flex-grow: 1;
     overflow-y: auto;
@@ -148,9 +142,9 @@
 }
 
 
-/* ==========================================================================
+/*
    4. MENU CHUỘT PHẢI (CONTEXT MENU)
-   ========================================================================== */
+   */
 .context-menu { 
     position: absolute; 
     z-index: 1010; 
@@ -181,9 +175,9 @@
 }
 
 
-/* ==========================================================================
+/* 
    5. MODAL (POPUP FORM)
-   ========================================================================== */
+    */
 .modal-overlay { 
     position: fixed; 
     top: 0; 
@@ -246,9 +240,9 @@
 
 
 
-/* ==========================================================================
+/* 
    6. FORM TRONG MODAL
-   ========================================================================== */
+    */
 .employee-form { 
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
@@ -306,9 +300,9 @@
 }
 
 
-/* ==========================================================================
+/* 
    7. UPLOAD ẢNH (AVATAR UPLOADER)
-   ========================================================================== */
+    */
 .avatar-uploader {
   display: flex;
   justify-content: center;
@@ -351,13 +345,13 @@
 }
 
 .dropdown-menu .dropdown-button:hover {
-  background-color: var(--hover-bg); /* Giống hiệu ứng hover của thẻ <a> */
+  background-color: var(--hover-bg);
 }
 
 .actions-cell {
-    text-align: right; /* Căn nút 3 chấm về bên phải */
-    position: relative; /* Cần thiết để định vị context-menu */
-    width: 60px; /* Cho cột có độ rộng cố định */
+    text-align: right;
+    position: relative; 
+    width: 60px; 
 }
 
 .action-btn {
@@ -379,8 +373,8 @@
 
 .employee-detail-page {
   padding: 24px;
-  max-height: calc(100vh - 100px); /* để không vượt màn hình */
-  overflow-y: auto; /* bật scroll khi nội dung dài */
+  max-height: calc(100vh - 100px);
+  overflow-y: auto; 
 }
 
 .employee-detail-page .detail-card {
@@ -427,9 +421,9 @@
   color: var(--main-text);
 }
 
-/* ========================================================================== 
+/*  
    9. EDIT PAGE RIÊNG (Chỉnh sửa nhân viên)
-   ========================================================================== */
+    */
 .employee-edit-page {
   padding: 24px;
   max-height: calc(100vh - 100px);

@@ -316,3 +316,4 @@ INSERT INTO ThoiViecs (MaThoiViec, MaNhanVien, LyDo, NgayThoiViec) VALUES
 
 
 select *from NhanViens
+select *from Users

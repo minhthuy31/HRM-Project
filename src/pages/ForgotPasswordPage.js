@@ -1,5 +1,3 @@
-// src/pages/ForgotPasswordPage.js
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
@@ -17,7 +15,7 @@ function ForgotPasswordPage() {
 
   const navigate = useNavigate();
 
-  // Xử lý bước 1: Gửi yêu cầu mã code
+  // bước 1: Gửi yêu cầu mã code
   const handleRequestCode = async (e) => {
     e.preventDefault();
     setError("");
@@ -25,13 +23,13 @@ function ForgotPasswordPage() {
     try {
       const response = await api.post("/Auth/forgot-password", { email });
       setMessage(response.data.message);
-      setStep(2); // Chuyển sang bước 2
+      setStep(2);
     } catch (err) {
       setError(err.response?.data?.message || "Có lỗi xảy ra.");
     }
   };
 
-  // Xử lý bước 2: Đặt lại mật khẩu
+  // bước 2: Đặt lại mật khẩu
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError("");

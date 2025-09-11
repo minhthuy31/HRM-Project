@@ -300,7 +300,7 @@ const EmployeeEditPage = () => {
                 name="tenChuyenNganh"
                 value={employee.tenChuyenNganh || ""}
                 onChange={handleChange}
-                readOnly // Usually comes from a related table, should be read-only
+                readOnly
               />
             </div>
             <div className="form-group">
@@ -310,7 +310,7 @@ const EmployeeEditPage = () => {
                 name="tenTrinhDoHocVan"
                 value={employee.tenTrinhDoHocVan || ""}
                 onChange={handleChange}
-                readOnly // Usually comes from a related table, should be read-only
+                readOnly
               />
             </div>
             <div className="form-group">
@@ -326,7 +326,6 @@ const EmployeeEditPage = () => {
               <label>Trạng thái:</label>
               <select
                 name="trangThai"
-                // Use boolean for value to be safe
                 value={employee.trangThai}
                 onChange={(e) =>
                   setEmployee({

@@ -1,4 +1,4 @@
-
+/* ================== ROOT VARIABLES ================== */
 :root {
   --sidebar-bg: #ffffff;
   --sidebar-text: #333333;
@@ -39,14 +39,14 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-
+/* ================== DASHBOARD CONTAINER ================== */
 .dashboard-container {
   height: 100vh;
   display: flex;
   overflow: hidden;
 }
 
-/* SIDEBAR */
+/* ================== SIDEBAR ================== */
 .sidebar {
   position: fixed;
   top: 0;
@@ -61,14 +61,58 @@ body {
   z-index: 1000;
   overflow-y: auto;
 }
+.sidebar::-webkit-scrollbar { display: none; }
 
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0px;
+}
 .sidebar-header h2 {
   color: var(--logo-text-color);
 }
-.toggle-btn {
-    color: var(--toggle-icon-color);
+.system-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+.logo {
+  width: 90px;
+  height: 70px;
+  transition: width 0.3s ease;
+}
+.sidebar h2 {
+  font-size: 23px;
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--toggle-icon-color);
+}
+.toggle-icon {
+  transition: transform 0.3s ease;
+}
+.toggle-icon.rotated {
+  transform: rotate(180deg);
+}
+
+ul { list-style: none; padding: 0; margin: 0; }
+li { margin: 6px 0; }
 li a {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 17px;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  justify-content: flex-start;
   color: var(--sidebar-text);
 }
 li a:hover {
@@ -76,24 +120,23 @@ li a:hover {
   color: var(--hover-text);
   transform: translateX(4px);
 }
+.icon {
+  margin-right: 10px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+}
+.text { white-space: nowrap; display: inline; }
+
 .menu-separator {
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--separator-color);
 }
 
-
-
-.main-content {
-  margin-left: 240px;
-  height: 100vh;
-  padding: 20px;
-  background: var(--main-bg);
-  flex-grow: 1;
-  transition: margin-left 0.3s ease;
-}
-
-
+/* Sidebar collapse */
 .dashboard-container.collapsed .sidebar {
   width: 80px;
   padding: 8px 4px;
@@ -108,75 +151,99 @@ li a:hover {
 .dashboard-container.collapsed.hovered .main-content {
   margin-left: 240px;
 }
-
-
-.sidebar::-webkit-scrollbar { display: none; }
-.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
-.system-title { display: flex; align-items: center; gap: 8px; }
-.logo { width: 90px; height: 70px; transition: width 0.3s ease; }
-.sidebar h2 { font-size: 23px; margin: 0; font-weight: 600; white-space: nowrap; }
 .dashboard-container.collapsed .sidebar .system-title h2 { display: none; }
 .dashboard-container.collapsed.hovered .sidebar .system-title h2 { display: block; }
-.toggle-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
-.toggle-icon { transition: transform 0.3s ease; }
-.toggle-icon.rotated { transform: rotate(180deg); }
-ul { list-style: none; padding: 0; margin: 0; }
-li { margin: 6px 0; }
-li a { text-decoration: none; display: flex; align-items: center; padding: 8px 10px; border-radius: 6px; font-size: 17px; transition: transform 0.2s ease, background-color 0.2s ease; justify-content: flex-start; }
-.icon { margin-right: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center; min-width: 20px; }
-.text { white-space: nowrap; display: inline; }
 .dashboard-container.collapsed .sidebar ul li a .text { display: none; }
 .dashboard-container.collapsed.hovered .sidebar ul li a .text { display: inline; }
 
-/* NAVBAR */
+/* ================== MAIN CONTENT ================== */
+.main-content {
+  margin-left: 240px;
+  height: 100vh;
+  padding: 20px;
+  background: var(--main-bg);
+  flex-grow: 1;
+  transition: margin-left 0.3s ease;
+}
+
+/* ================== NAVBAR ================== */
 .navbar {
   display: flex;
   align-items: center;
   gap: 20px;
-  
-  /* --- THAY ĐỔI Ở ĐÂY --- */
-  background-color: var(--card-bg); /* Đổi sang màu trắng tinh của thẻ */
-  padding: 8px 16px; /* Giảm padding dọc để thanh nhỏ lại, thêm padding ngang */
+  background-color: var(--card-bg);
+  padding: 8px 16px;
   margin-bottom: 20px;
   border-radius: 8px;
-  border: 1px solid var(--sidebar-border); /* Dùng border thay cho border-bottom */
+  border: 1px solid var(--sidebar-border);
 }
-.dark-mode-toggle { cursor: pointer; font-size: 20px; }
+.dark-mode-toggle {
+  cursor: pointer;
+  font-size: 20px;
+}
 
-/* AVATAR & DROPDOWN */
-.avatar-container { position: relative; cursor: pointer; }
-.avatar-hover-zone { position: absolute; top: 36px; right: 0; height: 20px; width: 160px; background: transparent; z-index: 1000; }
-.avatar { 
-    background: var(--avatar-bg);
-    color: var(--avatar-text);
-    width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; 
+/* ================== AVATAR & DROPDOWN ================== */
+.avatar-container {
+  position: relative;
+  cursor: pointer;
 }
-.dropdown-menu { 
-    display: none; position: absolute; top: 42px; right: 0; 
-    background-color: var(--card-bg); 
-    border: 1px solid var(--sidebar-border); 
-    box-shadow: 0 2px 8px var(--shadow-color); 
-    border-radius: 6px; padding: 8px; min-width: 160px; z-index: 1001; 
+.avatar-hover-zone {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  height: 20px;
+  width: 160px;
+  background: transparent;
+  z-index: 1000;
+}
+.avatar {
+  background: var(--avatar-bg);
+  color: var(--avatar-text);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 42px;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--sidebar-border);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  border-radius: 6px;
+  padding: 8px;
+  min-width: 160px;
+  z-index: 1001;
 }
 .avatar-container:hover .dropdown-menu,
 .avatar-container:hover .avatar-hover-zone { display: block; }
-.dropdown-menu a { display: block; padding: 6px 10px; color: var(--main-text); text-decoration: none; }
-.dropdown-menu a:hover { background-color: var(--hover-bg); }
+.dropdown-menu a {
+  display: block;
+  padding: 6px 10px;
+  color: var(--main-text);
+  text-decoration: none;
+}
+.dropdown-menu a:hover {
+  background-color: var(--hover-bg);
+}
 
-/* Style cho khối ngày giờ mới */
+/* ================== DATETIME ================== */
 .datetime-container {
-    margin-right: auto; /* <-- Quan trọng: Đẩy khối này sang hẳn bên trái */
-    text-align: left;
-    color: var(--main-text);
+  margin-right: auto;
+  text-align: left;
+  color: var(--main-text);
 }
-
 .datetime-container .time {
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 1.2;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
 }
-
 .datetime-container .date {
-    font-size: 13px;
-    color: var(--toggle-icon-color);
+  font-size: 13px;
+  color: var(--toggle-icon-color);
 }

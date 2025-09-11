@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../api";
 import { FaTimes, FaUserCircle } from "react-icons/fa";
-import "../../styles/EmployeePage.css"; // Tái sử dụng style
+import "../../styles/EmployeePage.css";
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -18,7 +18,7 @@ const EmployeeListModal = ({ phongBan, onCancel }) => {
       if (!phongBan) return;
       setLoading(true);
       try {
-        // Gọi API để lấy nhân viên theo mã phòng ban
+        // gọi api để lấy tên tên nhân viên trong phòng ban ấy
         const response = await api.get(
           `/NhanVien?maPhongBan=${phongBan.maPhongBan}`
         );
