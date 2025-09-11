@@ -365,7 +365,13 @@ const EmployeePage = () => {
                     <td>{emp.maNhanVien}</td>
                     <td>{emp.tenChucVu}</td>
                     <td>{emp.tenPhongBan}</td>
-                    <td>{emp.trangThai ? "Hoạt động" : "Đã nghỉ"}</td>
+                    <td
+                      style={{
+                        color: emp.trangThai ? "black" : "red",
+                      }}
+                    >
+                      {emp.trangThai ? "Hoạt động" : "Đã nghỉ"}
+                    </td>
                     <td className="actions-cell">
                       <button
                         className="action-btn"
