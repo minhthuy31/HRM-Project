@@ -313,7 +313,19 @@ INSERT INTO ThoiViecs (MaThoiViec, MaNhanVien, LyDo, NgayThoiViec) VALUES
 ('TV04', 'NV04', N'Sức khỏe không đảm bảo', '2025-07-10'),
 ('TV05', 'NV05', N'Khác', '2025-07-20');
 
+--Dữ liệu bảng userrole
+INSERT INTO UserRoles (NameRole) VALUES (N'Nhân viên');
+INSERT INTO UserRoles (NameRole) VALUES (N'Phó phòng');
+INSERT INTO UserRoles (NameRole) VALUES (N'Trưởng phòng');
+INSERT INTO UserRoles (NameRole) VALUES (N'Nhân viên nhân sự');
+INSERT INTO UserRoles (NameRole) VALUES (N'Giám đốc');
 
+SELECT RoleId, NameRole FROM UserRoles WHERE RoleId = 3;
 
 select *from NhanViens
-select *from Users
+select *from UserRoles
+select *from ChucVuNhanViens
+
+UPDATE PhongBans
+SET TrangThai = 1
+WHERE TrangThai IS NULL OR TrangThai = 0;

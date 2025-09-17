@@ -190,7 +190,9 @@ const DashboardLayout = ({ children }) => {
 
           <div className="avatar-container">
             <div className="avatar">
-              {nhanVien?.hoTen ? nhanVien.hoTen.charAt(0).toUpperCase() : ""}
+              {nhanVien?.hoTen
+                ? nhanVien.hoTen.trim().split(" ").pop().charAt(0).toUpperCase()
+                : ""}
             </div>
             <div className="avatar-hover-zone"></div>
             <div className="dropdown-menu">

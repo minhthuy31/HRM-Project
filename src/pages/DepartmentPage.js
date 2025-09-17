@@ -9,68 +9,32 @@ import {
   FaSearch,
   FaUsers,
   FaEllipsisV,
+  FaUndo,
 } from "react-icons/fa";
 import "../styles/DepartmentPage.css";
 import DepartmentModal from "../components/modals/DepartmentModal";
 import EmployeeListModal from "../components/modals/EmployeeListModal";
 
-// tách ContextMenu ra để dễ quản lý
-const ContextMenu = ({
-  x,
-  y,
-  department,
-  onShowInfo,
-  onEdit,
-  onDelete,
-  onViewEmployees,
-  onClose,
-}) => {
-  useEffect(() => {
-    const handleClickOutside = () => onClose();
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [onClose]);
-
-  return (
-    <div className="context-menu" style={{ top: y, left: x }}>
-      <ul>
-        <li onClick={() => onViewEmployees(department)}>
-          <FaUsers /> Xem nhân viên
-        </li>
-        <li onClick={() => onShowInfo(department)}>
-          <FaEye /> Xem chi tiết
-        </li>
-        <li onClick={() => onEdit(department)}>
-          <FaEdit /> Chỉnh sửa
-        </li>
-        <li onClick={() => onDelete(department)}>
-          <FaTrash /> Xóa
-        </li>
-      </ul>
-    </div>
-  );
-};
-
 const DepartmentPage = () => {
   const [phongBans, setPhongBans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [contextMenu, setContextMenu] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-  });
+
+  const [filterTrangThai, setFilterTrangThai] = useState("true");
+
   const [currentDepartment, setCurrentDepartment] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEmployeeListModalOpen, setIsEmployeeListModalOpen] = useState(false);
   const [activeContextMenu, setActiveContextMenu] = useState(null);
 
-  const fetchData = useCallback(async (currentSearchTerm = "") => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (currentSearchTerm) params.append("searchTerm", currentSearchTerm);
+      if (searchTerm) params.append("searchTerm", searchTerm);
+      if (filterTrangThai !== "") params.append("trangThai", filterTrangThai);
+
       const url = `/PhongBan?${params.toString()}`;
       const response = await api.get(url);
       setPhongBans(response.data);
@@ -79,7 +43,14 @@ const DepartmentPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchTerm, filterTrangThai]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchData();
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchData]);
 
   const handleToggleContextMenu = (e, department) => {
     e.stopPropagation();
@@ -88,42 +59,18 @@ const DepartmentPage = () => {
     );
   };
 
-  //đóng menu nếu click ra ngoài
   useEffect(() => {
     const handleClickOutside = () => setActiveContextMenu(null);
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchData(searchTerm);
-    }, 500);
-    return () => clearTimeout(delayDebounceFn);
-  }, [fetchData, searchTerm]);
-
   const handleSearchChange = (e) => setSearchTerm(e.target.value);
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchData(searchTerm);
+    fetchData();
   };
 
-  const handleContextMenu = (e, dept) => {
-    e.preventDefault();
-    const windowHeight = window.innerHeight;
-    const menuHeight = 160;
-    let yPosition = e.pageY;
-
-    if (yPosition + menuHeight > windowHeight) {
-      yPosition = e.pageY - menuHeight;
-    }
-    setCurrentDepartment(dept);
-    setContextMenu({ visible: true, x: e.pageX, y: yPosition });
-  };
-
-  const closeContextMenu = () => setContextMenu({ visible: false });
-
-  // xử lý trong menu
   const handleAdd = () => {
     setCurrentDepartment(null);
     setIsEditModalOpen(true);
@@ -141,30 +88,66 @@ const DepartmentPage = () => {
     setIsEmployeeListModalOpen(true);
   };
 
-  const handleDelete = async (dept) => {
-    if (window.confirm(`Bạn có chắc muốn xóa phòng ban ${dept.tenPhongBan}?`)) {
+  const handleDisable = async (dept) => {
+    if (
+      window.confirm(
+        `Bạn có chắc muốn vô hiệu hóa phòng ban ${dept.tenPhongBan}?`
+      )
+    ) {
       try {
-        await api.delete(`/PhongBan/${dept.maPhongBan}`);
-        fetchData(searchTerm);
+        await api.post(`/PhongBan/${dept.maPhongBan}/disable`);
+
+        // THAY ĐỔI Ở ĐÂY: Cập nhật state trực tiếp thay vì gọi fetchData()
+        setPhongBans((prevPhongBans) =>
+          prevPhongBans.map(
+            (pb) =>
+              pb.maPhongBan === dept.maPhongBan
+                ? { ...pb, trangThai: false } // Tìm đúng phòng ban và đổi trạng thái
+                : pb // Giữ nguyên các phòng ban khác
+          )
+        );
       } catch (error) {
-        alert(error.response?.data || "Lỗi khi xóa phòng ban.");
+        alert(
+          error.response?.data?.message || "Lỗi khi vô hiệu hóa phòng ban."
+        );
       }
     }
   };
 
+  const handleActivate = async (dept) => {
+    if (
+      window.confirm(
+        `Bạn có chắc muốn kích hoạt lại phòng ban ${dept.tenPhongBan}?`
+      )
+    ) {
+      try {
+        await api.post(`/PhongBan/${dept.maPhongBan}/activate`);
+
+        setPhongBans((prevPhongBans) =>
+          prevPhongBans.map((pb) =>
+            pb.maPhongBan === dept.maPhongBan ? { ...pb, trangThai: true } : pb
+          )
+        );
+      } catch (error) {
+        alert(error.response?.data?.message || "Lỗi khi kích hoạt lại.");
+      }
+    }
+  };
   const handleSave = async (deptData) => {
     try {
+      const dataToSave = {
+        ...deptData,
+        trangThai: deptData.trangThai === "true" || deptData.trangThai === true,
+      };
       if (currentDepartment) {
-        // Chế độ sửa
-        await api.put(`/PhongBan/${currentDepartment.maPhongBan}`, deptData);
+        await api.put(`/PhongBan/${currentDepartment.maPhongBan}`, dataToSave);
       } else {
-        // Chế độ thêm mới
-        await api.post("/PhongBan", deptData);
+        await api.post("/PhongBan", dataToSave);
       }
       setIsEditModalOpen(false);
-      fetchData(searchTerm);
+      fetchData();
     } catch (error) {
-      alert(error.response?.data || "Lưu thất bại!");
+      alert(error.response?.data?.message || "Lưu thất bại!");
     }
   };
 
@@ -185,6 +168,18 @@ const DepartmentPage = () => {
                 />
               </div>
             </form>
+
+            <div className="filter-container">
+              <select
+                value={filterTrangThai}
+                onChange={(e) => setFilterTrangThai(e.target.value)}
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="true">Hoạt động</option>
+                <option value="false">Vô hiệu hóa</option>
+              </select>
+            </div>
+
             <button onClick={handleAdd} className="add-btn">
               <FaPlus /> Thêm mới
             </button>
@@ -202,6 +197,7 @@ const DepartmentPage = () => {
                   <th>Tên phòng ban</th>
                   <th>Địa chỉ</th>
                   <th>Số điện thoại</th>
+                  <th>Trạng thái</th>
                   <th></th>
                 </tr>
               </thead>
@@ -209,14 +205,12 @@ const DepartmentPage = () => {
                 {phongBans.map((dept) => (
                   <tr key={dept.maPhongBan}>
                     <td>{dept.maPhongBan}</td>
-                    <td
-                      onContextMenu={(e) => handleContextMenu(e, dept)}
-                      className="department-name-cell"
-                    >
-                      {dept.tenPhongBan}
-                    </td>
+                    <td>{dept.tenPhongBan}</td>
                     <td>{dept.diaChi}</td>
                     <td>{dept.sdt_PhongBan}</td>
+                    <td style={{ color: dept.trangThai ? "green" : "red" }}>
+                      {dept.trangThai ? "Hoạt động" : "Vô hiệu hóa"}
+                    </td>
                     <td className="actions-cell">
                       <button
                         className="action-btn"
@@ -236,9 +230,15 @@ const DepartmentPage = () => {
                             <li onClick={() => handleEdit(dept)}>
                               <FaEdit /> Chỉnh sửa
                             </li>
-                            <li onClick={() => handleDelete(dept)}>
-                              <FaTrash /> Xóa
-                            </li>
+                            {dept.trangThai ? (
+                              <li onClick={() => handleDisable(dept)}>
+                                <FaTrash /> Vô hiệu hóa
+                              </li>
+                            ) : (
+                              <li onClick={() => handleActivate(dept)}>
+                                <FaUndo /> Kích hoạt
+                              </li>
+                            )}
                           </ul>
                         </div>
                       )}
@@ -250,19 +250,6 @@ const DepartmentPage = () => {
           </div>
         )}
       </div>
-
-      {contextMenu.visible && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          department={currentDepartment}
-          onClose={closeContextMenu}
-          onShowInfo={handleViewDetails}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onViewEmployees={handleViewEmployees}
-        />
-      )}
 
       {isEditModalOpen && (
         <DepartmentModal
