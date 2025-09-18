@@ -9,7 +9,7 @@
     /* Bố cục cho thanh cuộn */
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 150px); 
+    height: 100%s
 }
 
 .page-header {
@@ -228,10 +228,20 @@
 /* Input + Select trong modal thêm nhân viên */
 .modal-content .form-group input,
 .modal-content .form-group select {
-  padding: 14px 16px;  /* cao và rộng hơn */
-  font-size: 18px;     /* chữ to hơn */
+  padding: 14px 16px;     /* cao và rộng hơn */
+  font-size: 15px;        /* chữ to hơn */
+  height: 50px;           /* ép chiều cao giống nhau */
+  box-sizing: border-box; /* tính cả padding vào height */
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
+.modal-content .form-group select {
+  appearance: none;       /* bỏ style mặc định */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff; /* nền trắng giống input */
+}
 /* Nút submit to hơn */
 .modal-content.btn-submit {
   font-size: 18px;
@@ -259,15 +269,23 @@
     font-weight: 500; 
 }
 
-.form-group input, .form-group select { 
-    width: 100%; 
-    padding: 10px; 
-    border-radius: 6px; 
-    border: 1px solid var(--sidebar-border); 
-    background-color: var(--sidebar-bg); 
-    color: var(--main-text); 
-    font-size: 16px; 
+.form-group input,
+.form-group select {
+  padding: 14px 16px;     /* cao và rộng hơn */
+  font-size: 15px;        /* chữ to hơn */
+  height: 50px;           /* ép chiều cao giống nhau */
+  box-sizing: border-box; /* tính cả padding vào height */
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
+
+.form-group select {
+  appearance: none;       /* bỏ style mặc định */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff; /* nền trắng giống input */
+}
+
 
 .form-section-title {
     grid-column: 1 / -1;

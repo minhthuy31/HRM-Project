@@ -42,17 +42,6 @@ const DepartmentModal = ({
         </div>
         <form className="department-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Mã phòng ban</label>
-            <input
-              type="text"
-              name="maPhongBan"
-              value={formData.maPhongBan || ""}
-              onChange={handleChange}
-              required
-              disabled={!!department}
-            />
-          </div>
-          <div className="form-group">
             <label>Tên phòng ban</label>
             <input
               type="text"

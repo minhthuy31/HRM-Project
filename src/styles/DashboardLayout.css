@@ -43,7 +43,7 @@ body {
 .dashboard-container {
   height: 100vh;
   display: flex;
-  overflow: hidden;
+  /* XÓA DÒNG NÀY: overflow: hidden; */
 }
 
 /* ================== SIDEBAR ================== */
@@ -156,14 +156,23 @@ li a:hover {
 .dashboard-container.collapsed .sidebar ul li a .text { display: none; }
 .dashboard-container.collapsed.hovered .sidebar ul li a .text { display: inline; }
 
-/* ================== MAIN CONTENT ================== */
+/* ================== MAIN CONTENT (THAY ĐỔI LỚN) ================== */
 .main-content {
   margin-left: 240px;
-  height: 100vh;
-  padding: 20px;
-  background: var(--main-bg);
-  flex-grow: 1;
+  flex-grow: 1; /* Thay thế cho width */
   transition: margin-left 0.3s ease;
+
+  /* BIẾN NÓ THÀNH FLEX CONTAINER DẠNG CỘT */
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Giới hạn chiều cao */
+}
+
+/* VÙNG CHỨA NỘI DUNG CHÍNH CỦA TRANG */
+.page-content-wrapper {
+  flex-grow: 1; /* Lấp đầy không gian còn lại dưới Navbar */
+  overflow-y: auto; /* Tự động tạo thanh cuộn dọc khi cần */
+  padding: 20px;
 }
 
 /* ================== NAVBAR ================== */
@@ -173,9 +182,10 @@ li a:hover {
   gap: 20px;
   background-color: var(--card-bg);
   padding: 8px 16px;
-  margin-bottom: 20px;
   border-radius: 8px;
   border: 1px solid var(--sidebar-border);
+  flex-shrink: 0; /* Ngăn Navbar bị co lại */
+  margin: 20px 20px 0 20px; /* Thêm margin để tách khỏi sidebar và top */
 }
 .dark-mode-toggle {
   cursor: pointer;

@@ -124,7 +124,15 @@ const TimekeepingPage = () => {
               <tbody>
                 {employees.map((emp) => (
                   <tr key={emp.maNhanVien}>
-                    <td className="employee-name-col">{emp.hoTen}</td>
+                    <td className="employee-name-col">
+                      <div className="employee-name">{emp.hoTen}</div>
+                      <div
+                        className="employee-code"
+                        style={{ color: "#f87171", fontSize: "14px" }}
+                      >
+                        {emp.maNhanVien}
+                      </div>
+                    </td>
                     {daysArray.map((day) => {
                       const record = attendance[emp.maNhanVien]?.[day] || {};
                       const status = record.trangThai || "";

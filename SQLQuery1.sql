@@ -325,6 +325,7 @@ SELECT RoleId, NameRole FROM UserRoles WHERE RoleId = 3;
 select *from NhanViens
 select *from UserRoles
 select *from ChucVuNhanViens
+select *from PhongBans
 
 UPDATE PhongBans
 SET TrangThai = 1

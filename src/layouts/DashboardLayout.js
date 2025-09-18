@@ -54,7 +54,6 @@ const DashboardLayout = ({ children }) => {
       }
     };
     fetchCurrentUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
@@ -204,7 +203,7 @@ const DashboardLayout = ({ children }) => {
             </div>
           </div>
         </div>
-        {children}
+        <div className="page-content-wrapper">{children}</div>
       </main>
     </div>
   );

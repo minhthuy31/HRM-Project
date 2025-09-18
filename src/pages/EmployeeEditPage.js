@@ -23,6 +23,10 @@ const EmployeeEditPage = () => {
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [phongBans, setPhongBans] = useState([]);
+  const [chucVuNhanViens, setChucVus] = useState([]);
+  const [chuyenNganhs, setChuyenNganhs] = useState([]);
+  const [trinhDoHocVans, setTrinhDoHocVans] = useState([]);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -38,6 +42,54 @@ const EmployeeEditPage = () => {
     };
     fetchEmployee();
   }, [employeeId]);
+
+  useEffect(() => {
+    const fetchPhongBans = async () => {
+      try {
+        const res = await api.get("/PhongBan");
+        setPhongBans(res.data);
+      } catch (err) {
+        console.error("Lỗi tải phòng ban:", err);
+      }
+    };
+    fetchPhongBans();
+  }, []);
+
+  useEffect(() => {
+    const fetchChucVus = async () => {
+      try {
+        const res = await api.get("/ChucVuNhanVien");
+        setChucVus(res.data);
+      } catch (err) {
+        console.error("Lỗi tải chức vụ:", err);
+      }
+    };
+    fetchChucVus();
+  }, []);
+
+  useEffect(() => {
+    const fetchChuyenNganhs = async () => {
+      try {
+        const res = await api.get("/ChuyenNganh");
+        setChuyenNganhs(res.data);
+      } catch (err) {
+        console.error("Lỗi tải chuyên ngành:", err);
+      }
+    };
+    fetchChuyenNganhs();
+  }, []);
+
+  useEffect(() => {
+    const fetchTrinhDoHocVans = async () => {
+      try {
+        const res = await api.get("/TrinhDoHocVan");
+        setTrinhDoHocVans(res.data);
+      } catch (err) {
+        console.error("Lỗi tải trình độ học vấn:", err);
+      }
+    };
+    fetchTrinhDoHocVans();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -294,24 +346,67 @@ const EmployeeEditPage = () => {
 
             <h3 className="form-section-title">Thông tin công việc</h3>
             <div className="form-group">
-              <label>Chuyên ngành:</label>
-              <input
-                type="text"
-                name="tenChuyenNganh"
-                value={employee.tenChuyenNganh || ""}
+              <label>Phòng ban</label>
+              <select
+                name="maPhongBan"
+                value={employee.maPhongBan || ""}
                 onChange={handleChange}
-                readOnly
-              />
+              >
+                <option value="">-- Chọn --</option>
+                {(phongBans || []).map((pb) => (
+                  <option key={pb.maPhongBan} value={pb.maPhongBan}>
+                    {pb.tenPhongBan}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Chức vụ:</label>
+              <select
+                name="maChucVuNV"
+                value={employee.maChucVuNV || ""}
+                onChange={handleChange}
+              >
+                <option value="">-- Chọn --</option>
+                {(chucVuNhanViens || []).map((cv) => (
+                  <option key={cv.maChucVuNV} value={cv.maChucVuNV}>
+                    {cv.tenChucVu}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Chuyên ngành:</label>
+              <select
+                name="maChuyenNganh"
+                value={employee.maChuyenNganh || ""}
+                onChange={handleChange}
+              >
+                <option value="">-- Chọn chuyên ngành --</option>
+                {(chuyenNganhs || []).map((cn) => (
+                  <option key={cn.maChuyenNganh} value={cn.maChuyenNganh}>
+                    {cn.tenChuyenNganh}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label>Trình độ học vấn:</label>
-              <input
-                type="text"
-                name="tenTrinhDoHocVan"
-                value={employee.tenTrinhDoHocVan || ""}
+              <select
+                name="maTrinhDoHocVan"
+                value={employee.maTrinhDoHocVan || ""}
                 onChange={handleChange}
-                readOnly
-              />
+              >
+                <option value="">-- Chọn --</option>
+                {(trinhDoHocVans || []).map((tdhv) => (
+                  <option
+                    key={tdhv.maTrinhDoHocVan}
+                    value={tdhv.maTrinhDoHocVan}
+                  >
+                    {tdhv.tenTrinhDo}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label>Loại nhân viên:</label>
