@@ -1,6 +1,6 @@
-/* ==========================================================================
+/*
    1. BỐ CỤC TRANG CHÍNH & THANH CUỘN
-   ========================================================================== */
+   */
 .timekeeping-page {
     background-color: var(--card-bg, #ffffff);
     padding: 24px;
@@ -46,9 +46,9 @@
   color: var(--main-text);
 }
 
-/* ==========================================================================
+/*
    2. BẢNG DỮ LIỆU (DATA TABLE)
-   ========================================================================== */
+   */
 .timekeeping-table-container {
     flex-grow: 1; /* Lấp đầy không gian còn lại */
     overflow: auto; /* Tự động hiển thị cả 2 thanh cuộn khi cần */
@@ -105,9 +105,9 @@
     z-index: 15; /* Phải cao hơn header thường */
 }
 
-/* ==========================================================================
+/*
    3. CÁC Ô CHẤM CÔNG VÀ MODAL
-   ========================================================================== */
+   */
 .attendance-cell {
   cursor: pointer;
   position: relative;
@@ -115,9 +115,12 @@
   font-weight: 700;
 }
 .attendance-cell:hover { background-color: var(--hover-bg); }
-.status-present { color: #16a34a; }
-.status-absent { color: #dc2626; }
-.status-leave { color: #d97706; }
+.status-present { color: #16a34a; } /* Đi làm - Xanh lá */
+.status-absent  { color: #dc2626; } /* Vắng - Đỏ */
+.status-leave   { color: #d97706; } /* Nghỉ phép - Cam */
+
+/* === BỔ SUNG CLASS MỚI === */
+.status-half-day { color: #2563eb; }
 
 .time-range {
   font-size: 11px;
@@ -149,3 +152,30 @@
 .modal-actions button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; color: #fff; }
 .modal-actions .save-btn { background-color: #0d6efd; }
 .modal-actions .cancel-btn { background-color: #6c757d; }
+
+/* Tô màu cho các ô trong vùng được chọn */
+.attendance-cell.selected,
+.attendance-cell.in-range {
+  background-color: #dbeafe !important; /* Màu xanh nhạt */
+  border: 1px solid #93c5fd;
+  box-shadow: inset 0 0 0 1px #93c5fd;
+}
+
+/* Kiểu cho header của hàng/cột được chọn */
+.employee-name-col.selected,
+.day-header.selected {
+  background-color: #bfdbfe; /* Đậm hơn một chút */
+  font-weight: bold;
+}
+
+/* Thêm con trỏ chuột cho các header */
+.employee-name-col,
+.day-header {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.employee-name-col:hover,
+.day-header:hover {
+  background-color: #eef2ff;
+}
