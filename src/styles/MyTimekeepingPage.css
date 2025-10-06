@@ -1,0 +1,116 @@
+.my-timekeeping-view {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.timekeeping-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.month-navigator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.month-navigator button {
+  background: #f0f2f5;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.month-navigator button:hover {
+  background-color: #e4e6eb;
+}
+
+.month-navigator h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+}
+
+.day-cell {
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.day-number {
+  font-weight: 600;
+  color: #333;
+}
+
+.day-status {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.day-note {
+  font-size: 0.75rem;
+  color: #fff;
+  background-color: #6c757d;
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: help;
+  align-self: center;
+}
+
+/* Các màu trạng thái */
+.status-default { color: #16a34a; } /* Đi làm (mặc định) */
+.status-present { color: #16a34a; } /* Xanh lá */
+.status-leave   { color: #d97706; } /* Cam */
+.status-absent  { color: #dc2626; } /* Đỏ */
+
+/* Phần tổng kết */
+.summary-section {
+  margin-top: 2rem;
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+}
+.summary-section h4 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+.summary-grid {
+  display: flex;
+  justify-content: space-around;
+}
+.summary-item {
+  text-align: center;
+}
+.summary-value {
+  font-size: 2rem;
+  font-weight: bold;
+  display: block;
+}
+.summary-label {
+  color: #666;
+}
+.green { color: #16a34a; }
+.orange { color: #d97706; }
+.red { color: #dc2626; }

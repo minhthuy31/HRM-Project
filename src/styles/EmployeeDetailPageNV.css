@@ -1,0 +1,71 @@
+.employee-self-view {
+  background-color: var(--card-bg-color);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  padding: var(--content-padding);
+}
+
+.employee-self-view .detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--primary-bg-color);
+}
+
+.employee-self-view .detail-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.employee-self-view h1 {
+  font-size: 1.8rem;
+}
+
+/* --- Bố cục lưới chính --- */
+.employee-self-view .form-grid {
+  display: grid;
+  /* Bố cục 4 cột giống trang quản lý */
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* --- Tiêu đề section (VD: "Thông tin cá nhân") --- */
+.employee-self-view .form-section-title {
+  /* Chiếm trọn 4 cột */
+  grid-column: 1 / -1; 
+  color: var(--primary-accent-color);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--primary-accent-color);
+}
+
+/* --- Từng mục thông tin --- */
+.employee-self-view .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Dùng cho các mục dài như Quê quán, Địa chỉ */
+.employee-self-view .form-group.span-2 {
+    grid-column: span 2;
+}
+
+.employee-self-view .form-group label {
+  font-size: 0.85rem;
+  color: var(--text-secondary-color);
+  margin-bottom: 8px;
+}
+
+.employee-self-view .form-group span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary-color);
+}
+

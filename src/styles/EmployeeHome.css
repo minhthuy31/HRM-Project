@@ -1,0 +1,294 @@
+/* --- CSS Variables for easy themeing --- */
+:root {
+    --primary-bg-color: #f4f7f6; /* Nền xám nhạt */
+    --card-bg-color: #ffffff;
+    --text-primary-color: #333333;
+    --text-secondary-color: #757575;
+    --primary-accent-color: #007bff; /* Xanh dương cho các button và link */
+    --navbar-height: 60px;
+    --card-border-radius: 8px;
+    --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --content-padding: 1.5rem;
+}
+
+/* --- General Layout & Body --- */
+.employee-home-page {
+    background-color: var(--primary-bg-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-primary-color);
+    min-height: 100vh;
+}
+
+/* --- Navbar --- */
+.employee-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: var(--navbar-height);
+    padding: 0 var(--content-padding);
+    background-color: var(--card-bg-color);
+    box-shadow: var(--card-shadow);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+.navbar-center {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    background-color: var(--primary-bg-color);
+    padding: 8px 12px;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.search-container svg {
+    color: var(--text-secondary-color);
+    margin-right: 8px;
+}
+
+.search-container input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-size: 1rem;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.dark-mode-toggle {
+  cursor: pointer;
+  font-size: 20px;
+}
+.avatar-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-bg-color);
+}
+
+.dropdown-menu {
+    display: none; /* Ẩn mặc định */
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background-color: var(--card-bg-color);
+    border-radius: var(--card-border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 180px;
+    overflow: hidden;
+    z-index: 1001;
+}
+
+.avatar-container:hover .dropdown-menu {
+    display: block; /* Hiện khi hover */
+}
+
+.dropdown-menu a,
+.dropdown-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    color: var(--text-primary-color);
+    text-decoration: none;
+    font-size: 0.95rem;
+    border: none;
+    width: 100%;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu button:hover {
+    background-color: var(--primary-bg-color);
+}
+
+
+/* --- Main Content Grid --- */
+.employee-main-content {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px; /* Left sidebar, Main feed, Right sidebar */
+    gap: var(--content-padding);
+    padding: calc(var(--navbar-height) + var(--content-padding)) var(--content-padding) var(--content-padding);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* --- Left Sidebar --- */
+.left-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--content-padding);
+}
+
+.profile-summary, .action-buttons, .info-links {
+    background-color: var(--card-bg-color);
+    padding: var(--content-padding);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-shadow);
+}
+
+.profile-summary {
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border: 4px solid var(--primary-bg-color);
+}
+
+.profile-summary h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+}
+
+.profile-summary p {
+    margin: 0;
+    color: var(--text-secondary-color);
+    font-size: 0.9rem;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.action-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--primary-accent-color);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.action-btn:hover {
+    background-color: #0056b3;
+}
+
+.info-links ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-links li a {
+    display: block;
+    padding: 12px 0;
+    color: var(--text-primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px solid var(--primary-bg-color);
+    transition: color 0.2s ease;
+}
+
+.info-links li:last-child a {
+    border-bottom: none;
+}
+
+.info-links li a:hover {
+    color: var(--primary-accent-color);
+}
+
+
+/* --- Main Feed --- */
+.main-feed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--content-padding);
+}
+
+.banner-card {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--card-border-radius);
+}
+
+.banner-content h4 {
+    margin: 0 0 10px 0;
+    font-size: 1.8rem;
+}
+.banner-content p {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+
+/* --- Right Sidebar --- */
+.right-sidebar {
+    background-color: var(--card-bg-color);
+    padding: var(--content-padding);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-shadow);
+}
+
+
+/* --- Loading / Fallback State --- */
+.loading-fullscreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 1.5rem;
+    color: var(--text-secondary-color);
+}
+
+
+/* --- Responsive Design --- */
+
+/* For Tablets */
+@media (max-width: 1024px) {
+    .employee-main-content {
+        grid-template-columns: 250px 1fr; /* 2 columns, hide right sidebar */
+    }
+    .right-sidebar {
+        display: none;
+    }
+}
+
+/* For Mobile Phones */
+@media (max-width: 768px) {
+    .employee-main-content {
+        grid-template-columns: 1fr; /* 1 column, stack everything */
+    }
+    .navbar-center .search-container {
+        display: none; /* Hide search on mobile navbar */
+    }
+    .employee-main-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}       

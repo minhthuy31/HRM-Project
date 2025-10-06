@@ -126,3 +126,7 @@ body {
   color: #721c24;
   background-color: #f8d7da;
 }
+.login-logo {
+    width: 120px;
+    margin-bottom: 20px;
+}

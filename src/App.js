@@ -20,6 +20,10 @@ import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 import EmployeeEditPage from "./pages/EmployeeEditPage";
+import EmployeeHomePage from "./pages/EmployeeHomePage";
+import EmployeeDetailPageNV from "./pages/EmployeeDetailPageNV";
+import EmployeeWelcome from "./pages/EmployeeWelcome";
+import MyTimekeepingPage from "./pages/MyTimekeepingPage";
 
 function App() {
   return (
@@ -44,6 +48,15 @@ function App() {
           path="/nhan-vien/:employeeId/edit"
           element={<EmployeeEditPage />}
         />
+        {/* --- CẤU HÌNH ROUTE LỒNG NHAU --- */}
+        <Route path="/employee-home/:employeeId" element={<EmployeeHomePage />}>
+          {/* Trang mặc định khi vào employee-home */}
+          <Route index element={<EmployeeWelcome />} />
+
+          {/* Trang con cho thông tin chi tiết */}
+          <Route path="details" element={<EmployeeDetailPageNV />} />
+          <Route path="timekeeping" element={<MyTimekeepingPage />} />
+        </Route>
       </Routes>
     </Router>
   );
