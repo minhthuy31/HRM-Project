@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
-import { getUserFromToken } from "../utils/auth";
-import { useNavigate } from "react-router-dom";
+// import { getUserFromToken } from "../utils/auth";
+// import { useNavigate } from "react-router-dom";
 import {
   FaEye,
   FaEdit,
@@ -64,8 +64,8 @@ const EmployeePage = () => {
   const [trinhDoHocVans, setTrinhDoHocVans] = useState([]);
   const [hopDongs, setHopDongs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const currentUser = getUserFromToken();
+  // const navigate = useNavigate();
+  // const currentUser = getUserFromToken();
 
   const [activeMenu, setActiveMenu] = useState({
     id: null,
@@ -131,17 +131,17 @@ const EmployeePage = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (currentUser) {
-      //check role
-      if (currentUser.role === "Nhân viên") {
-        //gọi đến api
-        navigate(`/nhan-vien/${currentUser.maNhanVien}`);
-      }
-    } else {
-      navigate("/login");
-    }
-  }, [currentUser, navigate]);
+  // useEffect(() => {
+  //   if (currentUser) {
+  //     //check role
+  //     if (currentUser.role === "Nhân viên") {
+  //       //gọi đến api
+  //       navigate(`/nhan-vien/${currentUser.maNhanVien}`);
+  //     }
+  //   } else {
+  //     navigate("/login");
+  //   }
+  // }, [currentUser, navigate]);
 
   //hàm chung xử lý lọc
   const handleFilterChange = (e) => {
@@ -257,14 +257,14 @@ const EmployeePage = () => {
       alert(errorMsg);
     }
   };
-  // check role nhân viên để hiện
-  if (currentUser && currentUser.role === "Nhân viên") {
-    return (
-      <DashboardLayout>
-        <p>Đang tải hồ sơ của bạn...</p>
-      </DashboardLayout>
-    );
-  }
+  // // check role nhân viên để hiện
+  // if (currentUser && currentUser.role === "Nhân viên") {
+  //   return (
+  //     <DashboardLayout>
+  //       <p>Đang tải hồ sơ của bạn...</p>
+  //     </DashboardLayout>
+  //   );
+  // }
 
   return (
     <DashboardLayout>
@@ -391,7 +391,7 @@ const EmployeePage = () => {
                     <td>{emp.tenPhongBan}</td>
                     <td
                       style={{
-                        color: emp.trangThai ? "black" : "red",
+                        color: emp.trangThai ? "green" : "red",
                       }}
                     >
                       {emp.trangThai ? "Hoạt động" : "Đã nghỉ"}

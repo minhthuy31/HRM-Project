@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaTimes, FaUserCircle } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import "../../styles/EmployeePage.css";
+// Import file CSS thông thường
+import "../../styles/EmployeeModal.css";
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -26,18 +27,15 @@ const EmployeeModal = ({
   const [previewUrl, setPreviewUrl] = useState(null);
   const fileInputRef = useRef(null);
 
-  // khởi tạo dữ liệu
   useEffect(() => {
     const initialData = employee
       ? { ...employee }
-      : { trangThai: true, gioiTinh: 1 };
-
+      : { trangThai: true, gioiTinh: "1" };
     setFormData(initialData);
     setPreviewUrl(initialData.hinhAnh || null);
     setSelectedFile(null);
   }, [employee]);
 
-  // xử lý thay đổi đầu vào
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -47,13 +45,9 @@ const EmployeeModal = ({
   };
 
   const handleDateChange = (date, name) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: date,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: date }));
   };
 
-  //xử lý ảnh
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -62,30 +56,28 @@ const EmployeeModal = ({
     }
   };
 
-  // submit
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData, selectedFile);
   };
 
-  // Tên tiêu đề modal
   const getTitle = () => {
     if (isViewOnly && employee) return `Thông tin chi tiết: ${employee.hoTen}`;
     return employee ? `Sửa thông tin: ${employee.hoTen}` : "Thêm nhân viên mới";
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
+    <div className="employee-modal-overlay">
+      <div className="employee-modal__content">
+        <div className="employee-modal__header">
           <h2>{getTitle()}</h2>
-          <button onClick={onCancel} className="modal-close-btn">
+          <button onClick={onCancel} className="employee-modal__close-btn">
             <FaTimes />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="avatar-uploader">
+          <div className="employee-modal__avatar-uploader">
             <input
               type="file"
               accept="image/*"
@@ -95,32 +87,30 @@ const EmployeeModal = ({
               disabled={isViewOnly}
             />
             <div
-              className="avatar-preview"
+              className="employee-modal__avatar-preview"
               onClick={() => !isViewOnly && fileInputRef.current.click()}
             >
               {previewUrl ? (
                 <img src={getImageUrl(previewUrl)} alt="Avatar" />
               ) : (
                 <span>
-                  <FaUserCircle size={60} />
-                  <br />
-                  Chọn ảnh
+                  <FaUserCircle size={60} /> <br /> Chọn ảnh
                 </span>
               )}
             </div>
           </div>
 
-          <div className="employee-form">
-            <h3 className="form-section-title">Thông tin cá nhân</h3>
+          <div className="employee-modal__form">
+            <h3 className="employee-modal__section-title">Thông tin cá nhân</h3>
 
             {formData.maNhanVien && (
-              <div className="form-group">
+              <div className="employee-modal__form-group">
                 <label>Mã nhân viên</label>
                 <input type="text" value={formData.maNhanVien} disabled />
               </div>
             )}
 
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Họ tên</label>
               <input
                 type="text"
@@ -133,7 +123,7 @@ const EmployeeModal = ({
             </div>
 
             {!isViewOnly ? (
-              <div className="form-group">
+              <div className="employee-modal__form-group">
                 <label>Mật khẩu</label>
                 <input
                   type="password"
@@ -144,12 +134,12 @@ const EmployeeModal = ({
                 />
               </div>
             ) : (
-              <div className="form-group">
+              <div className="employee-modal__form-group">
                 <label>Mật khẩu</label>
                 <input type="password" value="********" disabled />
               </div>
             )}
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Ngày sinh</label>
               {isViewOnly ? (
                 <input
@@ -169,12 +159,12 @@ const EmployeeModal = ({
                   onChange={(date) => handleDateChange(date, "ngaySinh")}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="dd/mm/yyyy"
-                  className="date-picker-input"
+                  className="employee-modal__datepicker"
                 />
               )}
             </div>
 
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Giới tính</label>
               <select
                 name="gioiTinh"
@@ -189,7 +179,7 @@ const EmployeeModal = ({
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Dân tộc</label>
               <input
                 type="text"
@@ -200,7 +190,7 @@ const EmployeeModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Tình trạng hôn nhân</label>
               <input
                 type="text"
@@ -210,8 +200,8 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            {/* ... Các input khác cũng tương tự ... */}
+            <div className="employee-modal__form-group">
               <label>Quê quán</label>
               <input
                 type="text"
@@ -221,8 +211,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Địa chỉ thường trú</label>
               <input
                 type="text"
@@ -232,8 +221,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Địa chỉ tạm trú</label>
               <input
                 type="text"
@@ -244,11 +232,10 @@ const EmployeeModal = ({
               />
             </div>
 
-            <h3 className="form-section-title">
+            <h3 className="employee-modal__section-title">
               Thông tin định danh & Liên lạc
             </h3>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>CCCD</label>
               <input
                 type="text"
@@ -258,8 +245,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Ngày cấp CCCD</label>
               {isViewOnly ? (
                 <input
@@ -281,12 +267,11 @@ const EmployeeModal = ({
                   onChange={(date) => handleDateChange(date, "ngayCapCCCD")}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="dd/mm/yyyy"
-                  className="date-picker-input"
+                  className="employee-modal__datepicker"
                 />
               )}
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Nơi cấp CCCD</label>
               <input
                 type="text"
@@ -296,8 +281,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Số điện thoại</label>
               <input
                 type="text"
@@ -307,8 +291,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Email</label>
               <input
                 type="email"
@@ -318,8 +301,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Số tài khoản NH</label>
               <input
                 type="text"
@@ -329,8 +311,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Tên ngân hàng</label>
               <input
                 type="text"
@@ -340,10 +321,12 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
+            <h3 className="employee-modal__section-title">
+              Thông tin công việc
+            </h3>
 
-            <h3 className="form-section-title">Thông tin công việc</h3>
-
-            <div className="form-group">
+            {/* ... Tương tự cho các select và input còn lại ... */}
+            <div className="employee-modal__form-group">
               <label>Phòng ban</label>
               <select
                 name="maPhongBan"
@@ -359,8 +342,7 @@ const EmployeeModal = ({
                 ))}
               </select>
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Chức vụ</label>
               <select
                 name="maChucVuNV"
@@ -376,8 +358,7 @@ const EmployeeModal = ({
                 ))}
               </select>
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Chuyên ngành</label>
               <select
                 name="maChuyenNganh"
@@ -393,8 +374,7 @@ const EmployeeModal = ({
                 ))}
               </select>
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Trình độ học vấn</label>
               <select
                 name="maTrinhDoHocVan"
@@ -410,8 +390,7 @@ const EmployeeModal = ({
                 ))}
               </select>
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Hợp đồng</label>
               <select
                 name="maHopDong"
@@ -427,8 +406,7 @@ const EmployeeModal = ({
                 ))}
               </select>
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Loại nhân viên</label>
               <input
                 type="text"
@@ -438,8 +416,7 @@ const EmployeeModal = ({
                 disabled={isViewOnly}
               />
             </div>
-
-            <div className="form-group">
+            <div className="employee-modal__form-group">
               <label>Trạng thái</label>
               <select
                 name="trangThai"
@@ -452,10 +429,9 @@ const EmployeeModal = ({
               </select>
             </div>
 
-            {/* --- Nút Submit --- */}
             {!isViewOnly && (
-              <div className="form-group full-width">
-                <button type="submit" className="btn-submit">
+              <div className="employee-modal__form-group employee-modal__form-group--full-width">
+                <button type="submit" className="employee-modal__submit-btn">
                   {employee ? "Lưu thay đổi" : "Thêm mới"}
                 </button>
               </div>

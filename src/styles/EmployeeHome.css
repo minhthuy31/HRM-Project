@@ -291,4 +291,19 @@
         padding-left: 1rem;
         padding-right: 1rem;
     }
-}       
+}   
+
+.datetime {
+  margin-right: auto;
+  text-align: left;
+  color: var(--main-text);
+}
+.datetime .time {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.datetime .date {
+  font-size: 13px;
+  color: var(--toggle-icon-color);
+}

@@ -1,85 +1,48 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import "../styles/MyTimekeepingPage.css";
 
-// SỬA 1: Đơn giản hóa hàm helper, loại bỏ logic "mặc định"
-const getWorkDayStyle = (dayRecord) => {
-  // Nếu không có bản ghi cho ngày này, hiển thị ô trống
-  if (!dayRecord) {
-    return { text: "", className: "" };
-  }
-
-  const ngayCong = dayRecord.ngayCong;
-  if (ngayCong === 1.0) return { text: "1.0", className: "status-present" };
-  if (ngayCong === 0.5) return { text: "0.5", className: "status-leave" };
-  if (ngayCong === 0.0) return { text: "0.0", className: "status-absent" };
-  return { text: String(ngayCong), className: "" };
+const getDayOfWeek = (year, month, day) => {
+  const date = new Date(year, month, day);
+  const days = [
+    "Chủ Nhật",
+    "Thứ Hai",
+    "Thứ Ba",
+    "Thứ Tư",
+    "Thứ Năm",
+    "Thứ Sáu",
+    "Thứ Bảy",
+  ];
+  return days[date.getDay()];
 };
 
 const MyTimekeepingPage = () => {
-  const { employee } = useOutletContext();
+  const { employeeId } = useParams();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [attendanceData, setAttendanceData] = useState({});
+  const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async (date, maNhanVien) => {
-    if (!maNhanVien) return;
-    setLoading(true);
-    try {
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const response = await api.get(
-        `/ChamCong/${maNhanVien}?year=${year}&month=${month}`
-      );
-
-      const dataMap = {};
-      response.data.forEach((rec) => {
-        const day = parseInt(rec.ngayChamCong.split("-")[2], 10);
-        dataMap[day] = rec;
-      });
-      setAttendanceData(dataMap);
-    } catch (error) {
-      console.error("Lỗi tải dữ liệu chấm công cá nhân:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchData(currentDate, employee.maNhanVien);
-  }, [currentDate, employee.maNhanVien, fetchData]);
-
-  // SỬA 2: Tính toán LỊCH và BẢNG TỔNG KẾT chỉ dựa trên dữ liệu thực tế
-  const { calendarDays, summary } = useMemo(() => {
-    const daysInMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() + 1,
-      0
-    ).getDate();
-    const days = [];
-    let workDays = 0,
-      leaveDays = 0,
-      absentDays = 0;
-
-    // Tính tổng kết chỉ dựa trên các bản ghi tồn tại
-    Object.values(attendanceData).forEach((record) => {
-      if (record.ngayCong === 1.0) workDays++;
-      else if (record.ngayCong === 0.5) leaveDays += 0.5;
-      else if (record.ngayCong === 0.0) absentDays++;
-    });
-
-    // Tạo dữ liệu cho lịch, ngày nào không có dữ liệu thì `data` sẽ là `undefined`
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push({ day, data: attendanceData[day] });
-    }
-
-    return {
-      calendarDays: days,
-      summary: { workDays, leaveDays, absentDays },
+    const fetchData = async (date) => {
+      if (!employeeId) return;
+      setLoading(true);
+      try {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const response = await api.get(
+          `/ChamCong/${employeeId}?year=${year}&month=${month}`
+        );
+        setAttendanceData(response.data);
+      } catch (error) {
+        console.error("Lỗi tải dữ liệu chấm công:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [attendanceData, currentDate]);
+    fetchData(currentDate);
+  }, [currentDate, employeeId]);
 
   const changeMonth = (offset) => {
     setCurrentDate(
@@ -87,65 +50,132 @@ const MyTimekeepingPage = () => {
     );
   };
 
+  // Cập nhật hàm tính toán để bao gồm cả ngày làm nửa buổi
+  const summary = useMemo(() => {
+    return attendanceData.reduce(
+      (acc, record) => {
+        if (record.ngayCong === 1.0) acc.presentDays++;
+        else if (record.ngayCong === 0.5) acc.leaveDays++;
+        else if (record.ngayCong === 0.0) acc.absentDays++;
+        else if (record.ngayCong === -0.5) acc.halfWorkDays++;
+        return acc;
+      },
+      { presentDays: 0, leaveDays: 0, absentDays: 0, halfWorkDays: 0 }
+    );
+  }, [attendanceData]);
+
+  const daysInMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  ).getDate();
+  const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const getWorkDayStyle = (record) => {
+    if (record?.trangThaiDonNghi) {
+      switch (record.trangThaiDonNghi) {
+        case "Chờ duyệt":
+          return { text: "Chờ duyệt", className: "status-pending" };
+        case "Từ chối":
+          return { text: "Từ chối", className: "status-absent" };
+      }
+    }
+
+    const ngayCong = record?.ngayCong;
+    if (ngayCong === 1.0) return { text: "1.0", className: "status-present" };
+    if (ngayCong === 0.5) return { text: "0.5", className: "status-leave" };
+    if (ngayCong === 0.0) return { text: "0.0", className: "status-absent" };
+    if (ngayCong === -0.5) return { text: "0.5", className: "status-half-day" };
+    return { text: "-", className: "" };
+  };
+
   return (
     <div className="my-timekeeping-view">
       <div className="timekeeping-header">
         <div className="month-navigator">
           <button onClick={() => changeMonth(-1)}>
-            <FaChevronLeft />
+            {" "}
+            <FaChevronLeft />{" "}
           </button>
           <h2>{`Tháng ${
             currentDate.getMonth() + 1
           }, ${currentDate.getFullYear()}`}</h2>
           <button onClick={() => changeMonth(1)}>
-            <FaChevronRight />
+            {" "}
+            <FaChevronRight />{" "}
           </button>
+        </div>
+        <div className="work-schedule-section">
+          <h4>Giờ làm việc quy định</h4>
+          <p>
+            <strong>Buổi sáng:</strong> 8:00 - 12:00
+          </p>
+          <p>
+            <strong>Buổi chiều:</strong> 13:30 - 17:30
+          </p>
         </div>
       </div>
 
-      {loading ? (
-        <p>Đang tải dữ liệu...</p>
-      ) : (
-        <>
-          <div className="calendar-grid">
-            {calendarDays.map(({ day, data }) => {
-              const style = getWorkDayStyle(data);
-              return (
-                <div key={day} className="day-cell">
-                  <div className="day-number">{day}</div>
-                  <div className={`day-status ${style.className}`}>
-                    {style.text}
-                  </div>
-                  {data?.ghiChu && (
-                    <div className="day-note" title={data.ghiChu}>
-                      Ghi chú
-                    </div>
+      <div className="timekeeping-list">
+        <div className="list-header">
+          <div className="header-date">Ngày</div>
+          <div className="header-status">Trạng thái chấm công</div>
+        </div>
+        {loading ? (
+          <div className="loading-text">Đang tải dữ liệu...</div>
+        ) : (
+          allDays.map((day) => {
+            const record = attendanceData.find(
+              (r) => new Date(r.ngayChamCong).getUTCDate() === day
+            );
+            const style = getWorkDayStyle(record);
+            return (
+              <div className="day-row" key={day}>
+                <div className="date-col">
+                  <span className="date-text">{`${day}/${
+                    currentDate.getMonth() + 1
+                  }/${currentDate.getFullYear()}`}</span>
+                  <span className="day-of-week-text">
+                    {getDayOfWeek(
+                      currentDate.getFullYear(),
+                      currentDate.getMonth(),
+                      day
+                    )}
+                  </span>
+                </div>
+                <div className="status-col">
+                  <span className={style.className}>{style.text}</span>
+                  {record?.ghiChu && (
+                    <span className="status-note">{record.ghiChu}</span>
                   )}
                 </div>
-              );
-            })}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="summary-section">
+        <h4>Tổng kết công tháng {currentDate.getMonth() + 1}</h4>
+        <div className="summary-grid">
+          <div className="summary-item">
+            <span className="summary-value green">{summary.presentDays}</span>
+            <span className="summary-label">Ngày công</span>
           </div>
-          <div className="summary-section">
-            <h4>Tổng kết tháng</h4>
-            <div className="summary-grid">
-              <div className="summary-item">
-                <span className="summary-value green">{summary.workDays}</span>
-                <span className="summary-label">Ngày công</span>
-              </div>
-              <div className="summary-item">
-                <span className="summary-value orange">
-                  {summary.leaveDays}
-                </span>
-                <span className="summary-label">Ngày nghỉ phép</span>
-              </div>
-              <div className="summary-item">
-                <span className="summary-value red">{summary.absentDays}</span>
-                <span className="summary-label">Ngày vắng</span>
-              </div>
-            </div>
+          <div className="summary-item">
+            <span className="summary-value blue">{summary.halfWorkDays}</span>
+            <span className="summary-label">Ngày làm nửa buổi</span>
           </div>
-        </>
-      )}
+          <div className="summary-item">
+            <span className="summary-value orange">{summary.leaveDays}</span>
+            <span className="summary-label">Ngày nghỉ phép</span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-value red">{summary.absentDays}</span>
+            <span className="summary-label">Ngày vắng</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

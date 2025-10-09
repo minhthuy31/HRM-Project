@@ -3,10 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
 import { FaArrowLeft, FaUserCircle, FaCamera } from "react-icons/fa";
-import "../styles/EmployeePage.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
+import "../styles/EmployeeDetailPage.css"; // Đổi import
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -29,67 +29,29 @@ const EmployeeEditPage = () => {
   const [trinhDoHocVans, setTrinhDoHocVans] = useState([]);
 
   useEffect(() => {
-    const fetchEmployee = async () => {
+    const fetchAllData = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/NhanVien/${employeeId}`);
-        setEmployee(res.data);
+        const [empRes, pbRes, cvRes, cnRes, tdRes] = await Promise.all([
+          api.get(`/NhanVien/${employeeId}`),
+          api.get("/PhongBan"),
+          api.get("/ChucVuNhanVien"),
+          api.get("/ChuyenNganh"),
+          api.get("/TrinhDoHocVan"),
+        ]);
+        setEmployee(empRes.data);
+        setPhongBans(pbRes.data);
+        setChucVus(cvRes.data);
+        setChuyenNganhs(cnRes.data);
+        setTrinhDoHocVans(tdRes.data);
       } catch (err) {
-        console.error("Lỗi tải nhân viên:", err);
+        console.error("Lỗi tải dữ liệu:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchEmployee();
+    fetchAllData();
   }, [employeeId]);
-
-  useEffect(() => {
-    const fetchPhongBans = async () => {
-      try {
-        const res = await api.get("/PhongBan");
-        setPhongBans(res.data);
-      } catch (err) {
-        console.error("Lỗi tải phòng ban:", err);
-      }
-    };
-    fetchPhongBans();
-  }, []);
-
-  useEffect(() => {
-    const fetchChucVus = async () => {
-      try {
-        const res = await api.get("/ChucVuNhanVien");
-        setChucVus(res.data);
-      } catch (err) {
-        console.error("Lỗi tải chức vụ:", err);
-      }
-    };
-    fetchChucVus();
-  }, []);
-
-  useEffect(() => {
-    const fetchChuyenNganhs = async () => {
-      try {
-        const res = await api.get("/ChuyenNganh");
-        setChuyenNganhs(res.data);
-      } catch (err) {
-        console.error("Lỗi tải chuyên ngành:", err);
-      }
-    };
-    fetchChuyenNganhs();
-  }, []);
-
-  useEffect(() => {
-    const fetchTrinhDoHocVans = async () => {
-      try {
-        const res = await api.get("/TrinhDoHocVan");
-        setTrinhDoHocVans(res.data);
-      } catch (err) {
-        console.error("Lỗi tải trình độ học vấn:", err);
-      }
-    };
-    fetchTrinhDoHocVans();
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -154,29 +116,35 @@ const EmployeeEditPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="employee-edit-page">
-        <div className="detail-page-header">
-          <button onClick={() => navigate(-1)} className="back-button">
+      <div className="emp-detail-page">
+        <div className="emp-detail-page__header">
+          <button
+            onClick={() => navigate(-1)}
+            className="emp-detail-page__back-btn"
+          >
             <FaArrowLeft /> Quay lại
           </button>
         </div>
 
-        <div className="detail-card">
-          <div className="detail-header">
-            <div className="avatar-edit-container">
+        <div className="emp-detail-card">
+          <div className="emp-detail-card__header">
+            <div className="emp-detail-card__avatar-edit-container">
               {displayImage ? (
                 <img
                   src={displayImage}
                   alt={employee.hoTen}
-                  className="detail-avatar"
+                  className="emp-detail-card__avatar"
                 />
               ) : (
                 <FaUserCircle
                   size={100}
-                  className="detail-avatar-placeholder"
+                  className="emp-detail-card__avatar-placeholder"
                 />
               )}
-              <label htmlFor="avatar-upload" className="avatar-edit-button">
+              <label
+                htmlFor="avatar-upload"
+                className="emp-detail-card__avatar-edit-btn"
+              >
                 <FaCamera />
               </label>
               <input
@@ -187,15 +155,17 @@ const EmployeeEditPage = () => {
                 style={{ display: "none" }}
               />
             </div>
-            <div className="detail-header-info">
+            <div className="emp-detail-card__header-info">
               <h1>Chỉnh sửa nhân viên</h1>
               <p>{employee.maNhanVien}</p>
             </div>
           </div>
 
-          <div className="employee-form">
-            <h3 className="form-section-title">Thông tin cá nhân</h3>
-            <div className="form-group">
+          <div className="emp-detail-card__form">
+            <h3 className="emp-detail-card__section-title">
+              Thông tin cá nhân
+            </h3>
+            <div className="emp-detail-card__form-group">
               <label>Họ tên:</label>
               <input
                 type="text"
@@ -204,7 +174,16 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
+              <label>Mật khẩu</label>
+              <input
+                name="MatKhau"
+                type="password"
+                placeholder="Để trống nếu không muốn thay đổi"
+                onChange={handleChange}
+              />
+            </div>
+            <div className="emp-detail-card__form-group">
               <label>Ngày sinh:</label>
               <DatePicker
                 selected={
@@ -218,10 +197,9 @@ const EmployeeEditPage = () => {
                 }
                 dateFormat="dd/MM/yyyy"
                 placeholderText="dd/MM/yyyy"
-                className="form-control"
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Giới tính:</label>
               <select
                 name="gioiTinh"
@@ -232,7 +210,7 @@ const EmployeeEditPage = () => {
                 <option value={0}>Nữ</option>
               </select>
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Dân tộc:</label>
               <input
                 type="text"
@@ -241,7 +219,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Tình trạng hôn nhân:</label>
               <input
                 type="text"
@@ -250,7 +228,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Quê quán:</label>
               <input
                 type="text"
@@ -259,7 +237,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Địa chỉ thường trú:</label>
               <input
                 type="text"
@@ -269,10 +247,10 @@ const EmployeeEditPage = () => {
               />
             </div>
 
-            <h3 className="form-section-title">
+            <h3 className="emp-detail-card__section-title">
               Thông tin định danh & Liên lạc
             </h3>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>CCCD:</label>
               <input
                 type="text"
@@ -281,7 +259,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Ngày cấp:</label>
               <DatePicker
                 selected={
@@ -295,10 +273,9 @@ const EmployeeEditPage = () => {
                 }
                 dateFormat="dd/MM/yyyy"
                 placeholderText="dd/MM/yyyy"
-                className="form-control"
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Nơi cấp:</label>
               <input
                 type="text"
@@ -307,7 +284,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Số điện thoại:</label>
               <input
                 type="text"
@@ -316,7 +293,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Email:</label>
               <input
                 type="email"
@@ -325,7 +302,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Tài khoản NH:</label>
               <input
                 type="text"
@@ -334,7 +311,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Ngân hàng:</label>
               <input
                 type="text"
@@ -344,8 +321,10 @@ const EmployeeEditPage = () => {
               />
             </div>
 
-            <h3 className="form-section-title">Thông tin công việc</h3>
-            <div className="form-group">
+            <h3 className="emp-detail-card__section-title">
+              Thông tin công việc
+            </h3>
+            <div className="emp-detail-card__form-group">
               <label>Phòng ban</label>
               <select
                 name="maPhongBan"
@@ -353,29 +332,29 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               >
                 <option value="">-- Chọn --</option>
-                {(phongBans || []).map((pb) => (
+                {phongBans.map((pb) => (
                   <option key={pb.maPhongBan} value={pb.maPhongBan}>
                     {pb.tenPhongBan}
                   </option>
                 ))}
               </select>
             </div>
-            <div className="form-group">
-              <label>Chức vụ:</label>
+            <div className="emp-detail-card__form-group">
+              <label>Chức vụ:</label>
               <select
                 name="maChucVuNV"
                 value={employee.maChucVuNV || ""}
                 onChange={handleChange}
               >
                 <option value="">-- Chọn --</option>
-                {(chucVuNhanViens || []).map((cv) => (
+                {chucVuNhanViens.map((cv) => (
                   <option key={cv.maChucVuNV} value={cv.maChucVuNV}>
                     {cv.tenChucVu}
                   </option>
                 ))}
               </select>
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Chuyên ngành:</label>
               <select
                 name="maChuyenNganh"
@@ -383,14 +362,14 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               >
                 <option value="">-- Chọn chuyên ngành --</option>
-                {(chuyenNganhs || []).map((cn) => (
+                {chuyenNganhs.map((cn) => (
                   <option key={cn.maChuyenNganh} value={cn.maChuyenNganh}>
                     {cn.tenChuyenNganh}
                   </option>
                 ))}
               </select>
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Trình độ học vấn:</label>
               <select
                 name="maTrinhDoHocVan"
@@ -398,7 +377,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               >
                 <option value="">-- Chọn --</option>
-                {(trinhDoHocVans || []).map((tdhv) => (
+                {trinhDoHocVans.map((tdhv) => (
                   <option
                     key={tdhv.maTrinhDoHocVan}
                     value={tdhv.maTrinhDoHocVan}
@@ -408,7 +387,7 @@ const EmployeeEditPage = () => {
                 ))}
               </select>
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Loại nhân viên:</label>
               <input
                 type="text"
@@ -417,7 +396,7 @@ const EmployeeEditPage = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
+            <div className="emp-detail-card__form-group">
               <label>Trạng thái:</label>
               <select
                 name="trangThai"
@@ -433,8 +412,11 @@ const EmployeeEditPage = () => {
                 <option value={false}>Đã nghỉ việc</option>
               </select>
             </div>
-            <div className="form-actions">
-              <button onClick={handleSave} className="save-btn">
+            <div className="emp-detail-card__form-actions">
+              <button
+                onClick={handleSave}
+                className="emp-detail-card__save-btn"
+              >
                 Lưu thay đổi
               </button>
             </div>

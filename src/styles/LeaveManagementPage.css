@@ -1,0 +1,83 @@
+/* src/styles/LeaveManagementPage.css */
+
+.leave-management-container {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.leave-management-container h1 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+.error-message {
+    color: #dc3545;
+}
+
+/* --- Bảng hiển thị danh sách đơn --- */
+.requests-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.requests-table th,
+.requests-table td {
+    border: 1px solid #dee2e6;
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.requests-table thead {
+    background-color: #f8f9fa;
+}
+
+.requests-table th {
+    font-weight: 600;
+}
+
+.requests-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.requests-table tbody tr:hover {
+    background-color: #e9ecef;
+}
+
+.reason-cell {
+    max-width: 250px;
+    white-space: pre-wrap; /* Giúp xuống dòng nếu lý do quá dài */
+    word-wrap: break-word;
+}
+
+/* --- Các nút hành động --- */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-buttons button {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.action-buttons button:hover {
+    opacity: 0.85;
+}
+
+.approve-btn {
+    background-color: #28a745; /* Màu xanh lá */
+}
+
+.reject-btn {
+    background-color: #dc3545; /* Màu đỏ */
+}
+

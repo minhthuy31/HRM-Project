@@ -1,0 +1,192 @@
+/* ============================================== */
+/* == CSS DÀNH RIÊNG CHO TRANG CHI TIẾT & EDIT == */
+/* ============================================== */
+
+.emp-detail-page {
+  padding: 24px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto; 
+}
+
+/* --- Header của toàn trang (chứa nút back) --- */
+.emp-detail-page__header {
+  margin-bottom: 20px;
+}
+
+.emp-detail-page__back-btn {
+  background: none;
+  border: 1px solid var(--sidebar-border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: var(--main-text);
+}
+.emp-detail-page__back-btn:hover {
+  background-color: var(--hover-bg);
+}
+
+/* --- Thẻ card chính chứa nội dung --- */
+.emp-detail-card {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 24px 32px;
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(0,0,0,0.1));
+}
+
+/* --- Header của card (chứa avatar và tên) --- */
+.emp-detail-card__header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.emp-detail-card__avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.emp-detail-card__avatar-placeholder {
+  color: #ccc;
+}
+
+.emp-detail-card__header-info h1 {
+  margin: 0 0 4px 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.emp-detail-card__header-info p {
+  margin: 0;
+  font-size: 16px;
+  color: #666;
+}
+.emp-detail-card__header-info span {
+  font-size: 16px;
+  color: #333;
+}
+
+
+/* --- Form hiển thị thông tin --- */
+.emp-detail-card__form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px 28px;
+}
+
+.emp-detail-card__form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-detail-card__form-group label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+}
+
+/* --- Style CHUNG cho tất cả các ô (input, select, span) --- */
+.emp-detail-card__form-group input,
+.emp-detail-card__form-group select,
+.emp-detail-card__form-group span {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 45px; /* Đặt chiều cao cố định */
+  padding: 0 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* --- Style RIÊNG cho ô chỉ xem (trang Detail) --- */
+.emp-detail-card__form-group span {
+  background-color: #f0f0f0; /* Màu nền xám nhạt giống ô bị vô hiệu hóa */
+  color: #333;
+}
+
+/* --- Style RIÊNG cho ô nhập liệu (trang Edit) --- */
+.emp-detail-card__form-group input,
+.emp-detail-card__form-group select {
+  background-color: #ffffff;
+}
+
+.emp-detail-card__form-group input:focus,
+.emp-detail-card__form-group select:focus {
+  background-color: white;
+  border-color: #007bff;
+  outline: none;
+}
+
+
+.emp-detail-card__section-title {
+  grid-column: 1 / -1;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--logo-text-color);
+  margin-top: 20px;
+  margin-bottom: 0px;
+  border-bottom: 2px solid var(--hover-bg);
+  padding-bottom: 8px;
+}
+
+
+/* --- Dành riêng cho trang Edit --- */
+.emp-detail-card__form-actions {
+  grid-column: 1 / -1;
+  margin-top: 20px;
+  text-align: right;
+}
+
+.emp-detail-card__save-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.emp-detail-card__save-btn:hover {
+  background-color: #0056b3;
+}
+
+.emp-detail-card__avatar-edit-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.emp-detail-card__avatar-edit-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border: 2px solid white;
+  transition: background-color 0.2s;
+}
+.emp-detail-card__avatar-edit-btn:hover {
+  background-color: #0056b3;
+}
