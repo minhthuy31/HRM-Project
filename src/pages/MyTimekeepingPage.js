@@ -134,9 +134,9 @@ const MyTimekeepingPage = () => {
           className: record.ghiChu ? "status-leave" : "status-present",
           note: record.ghiChu,
         };
-      if (ngayCong === -0.5)
+      if (ngayCong === 0.5)
         return {
-          text: "-0.5",
+          text: "0.5",
           className: "status-half-day",
           note: record.ghiChu,
         };

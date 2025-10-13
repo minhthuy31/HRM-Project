@@ -1,22 +1,19 @@
-// src/pages/LeaveManagementPage.js
-
 import React, { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
-import "../styles/LeaveManagementPage.css"; // Có thể cần thêm style cho bộ lọc
+import "../styles/LeaveManagementPage.css";
 
 const LeaveManagementPage = () => {
   const [allRequests, setAllRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("Pending"); // Mặc định hiển thị đơn chờ duyệt
+  const [filter, setFilter] = useState("Chờ duyệt");
 
-  // Sử dụng endpoint mới để lấy TẤT CẢ đơn
   const fetchAllRequests = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await api.get("/DonNghiPhep"); // API LẤY TẤT CẢ
+      const response = await api.get("/DonNghiPhep");
       setAllRequests(response.data);
     } catch (err) {
       console.error("Lỗi tải danh sách đơn từ:", err);
@@ -30,17 +27,30 @@ const LeaveManagementPage = () => {
     fetchAllRequests();
   }, []);
 
-  // Hàm xử lý duyệt/từ chối (giữ nguyên logic gọi API của bạn)
   const handleApprove = async (request) => {
-    /* ... giữ nguyên ... */
-  };
-  const handleReject = async (id) => {
-    /* ... giữ nguyên ... */
+    try {
+      await api.put(`/DonNghiPhep/${request.id}/approve`);
+      alert("Đã duyệt đơn thành công!");
+      fetchAllRequests();
+    } catch (err) {
+      alert("Đã có lỗi xảy ra khi duyệt đơn.");
+      console.error("Lỗi duyệt đơn:", err);
+    }
   };
 
-  // Lọc danh sách đơn dựa trên state 'filter'
+  const handleReject = async (id) => {
+    try {
+      await api.put(`/DonNghiPhep/${id}/reject`);
+      alert("Đã từ chối đơn.");
+      fetchAllRequests();
+    } catch (err) {
+      alert("Đã có lỗi xảy ra khi từ chối đơn.");
+      console.error("Lỗi từ chối đơn:", err);
+    }
+  };
+
   const filteredRequests = useMemo(() => {
-    if (filter === "All") {
+    if (filter === "Tất cả") {
       return allRequests;
     }
     return allRequests.filter((req) => req.trangThai === filter);
@@ -49,9 +59,13 @@ const LeaveManagementPage = () => {
   const formatDate = (dateString) =>
     new Date(dateString).toLocaleDateString("vi-VN");
 
-  // Component hiển thị trạng thái dưới dạng huy hiệu cho đẹp
   const StatusBadge = ({ status }) => {
-    const statusClass = `status-badge ${status?.toLowerCase()}`;
+    const statusMap = {
+      "Chờ duyệt": "pending",
+      "Đã duyệt": "approved",
+      "Từ chối": "rejected",
+    };
+    const statusClass = `status-badge ${statusMap[status] || "default"}`;
     return <span className={statusClass}>{status}</span>;
   };
 
@@ -60,57 +74,53 @@ const LeaveManagementPage = () => {
       <div className="leave-management-container">
         <h1>Quản lý Đơn Xin Nghỉ Phép</h1>
 
-        {/* BỘ LỌC MỚI */}
         <div className="filter-buttons">
           <button
-            onClick={() => setFilter("Pending")}
-            className={filter === "Pending" ? "active" : ""}
+            onClick={() => setFilter("Chờ duyệt")}
+            className={filter === "Chờ duyệt" ? "active" : ""}
           >
             Chờ duyệt
           </button>
           <button
-            onClick={() => setFilter("Approved")}
-            className={filter === "Approved" ? "active" : ""}
+            onClick={() => setFilter("Đã duyệt")}
+            className={filter === "Đã duyệt" ? "active" : ""}
           >
             Đã duyệt
           </button>
           <button
-            onClick={() => setFilter("Rejected")}
-            className={filter === "Rejected" ? "active" : ""}
+            onClick={() => setFilter("Từ chối")}
+            className={filter === "Từ chối" ? "active" : ""}
           >
             Đã từ chối
           </button>
           <button
-            onClick={() => setFilter("All")}
-            className={filter === "All" ? "active" : ""}
+            onClick={() => setFilter("Tất cả")}
+            className={filter === "Tất cả" ? "active" : ""}
           >
             Tất cả
           </button>
         </div>
 
-        {loading && <p>Đang tải danh sách...</p>}
-        {error && <p className="error-message">{error}</p>}
-
-        {!loading && filteredRequests.length === 0 && (
-          <p>Không có đơn nào phù hợp với bộ lọc.</p>
-        )}
-
-        {!loading && filteredRequests.length > 0 && (
+        {!loading && (
           <table className="requests-table">
             <thead>
               <tr>
+                {/* ***** 1. THÊM TIÊU ĐỀ CỘT MÃ NHÂN VIÊN ***** */}
+                <th>Mã NV</th>
                 <th>Tên Nhân Viên</th>
                 <th>Ngày Gửi</th>
                 <th>Ngày Nghỉ</th>
                 <th>Lý Do</th>
-                <th>Trạng Thái</th> {/* CỘT MỚI */}
+                <th>Trạng Thái</th>
                 <th>Hành Động</th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.map((request) => (
                 <tr key={request.id}>
-                  <td>{request.nhanVien?.hoTen || "N/A"}</td>
+                  {/* ***** 2. THÊM Ô DỮ LIỆU MÃ NHÂN VIÊN ***** */}
+                  <td>{request.maNhanVien}</td>
+                  <td>{request.hoTenNhanVien || "N/A"}</td>
                   <td>{formatDate(request.ngayGuiDon)}</td>
                   <td>{formatDate(request.ngayNghi)}</td>
                   <td className="reason-cell">{request.lyDo || "Không có"}</td>
@@ -118,8 +128,7 @@ const LeaveManagementPage = () => {
                     <StatusBadge status={request.trangThai} />
                   </td>
                   <td>
-                    {/* Chỉ hiển thị nút khi đơn đang chờ duyệt */}
-                    {request.trangThai === "Pending" && (
+                    {request.trangThai === "Chờ duyệt" && (
                       <div className="action-buttons">
                         <button
                           className="approve-btn"
