@@ -12,21 +12,55 @@ import {
   FaUndo,
 } from "react-icons/fa";
 import "../styles/DepartmentPage.css";
+import "../styles/EmployeePage.css";
 import DepartmentModal from "../components/modals/DepartmentModal";
 import EmployeeListModal from "../components/modals/EmployeeListModal";
+
+// --- Component ContextMenu riêng cho Phòng ban ---
+const DepartmentContextMenu = ({ department, onAction, onClose, x, y }) => {
+  useEffect(() => {
+    const handleClickOutside = () => onClose();
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div className="context-menu" style={{ top: y, left: x }}>
+      <ul>
+        <li onClick={() => onAction("viewEmployees", department)}>
+          <FaUsers /> Xem nhân viên
+        </li>
+        <li onClick={() => onAction("viewDetails", department)}>
+          <FaEye /> Xem chi tiết
+        </li>
+        <li onClick={() => onAction("edit", department)}>
+          <FaEdit /> Chỉnh sửa
+        </li>
+        {department.trangThai ? (
+          <li onClick={() => onAction("disable", department)}>
+            <FaTrash /> Vô hiệu hóa
+          </li>
+        ) : (
+          <li onClick={() => onAction("activate", department)}>
+            <FaUndo /> Kích hoạt
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+};
 
 const DepartmentPage = () => {
   const [phongBans, setPhongBans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-
   const [filterTrangThai, setFilterTrangThai] = useState("true");
-
   const [currentDepartment, setCurrentDepartment] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEmployeeListModalOpen, setIsEmployeeListModalOpen] = useState(false);
-  const [activeContextMenu, setActiveContextMenu] = useState(null);
+
+  const [activeMenu, setActiveMenu] = useState({ id: null, x: 0, y: 0 });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -52,25 +86,51 @@ const DepartmentPage = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [fetchData]);
 
-  const handleToggleContextMenu = (e, department) => {
+  const handleToggleMenu = (e, department) => {
+    e.preventDefault();
     e.stopPropagation();
-    setActiveContextMenu((prev) =>
-      prev === department.maPhongBan ? null : department.maPhongBan
-    );
+    const menuWidth = 200;
+    const menuHeight = 170; // Chiều cao ước tính của menu
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if (x + menuWidth > window.innerWidth)
+      x = window.innerWidth - menuWidth - 10;
+    if (y + menuHeight > window.innerHeight)
+      y = window.innerHeight - menuHeight - 10;
+
+    setActiveMenu({ id: department.maPhongBan, x, y });
   };
 
-  useEffect(() => {
-    const handleClickOutside = () => setActiveContextMenu(null);
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  const handleAction = (actionType, dept) => {
+    setActiveMenu({ id: null, x: 0, y: 0 }); // Đóng menu
+
+    switch (actionType) {
+      case "viewEmployees":
+        handleViewEmployees(dept);
+        break;
+      case "viewDetails":
+        handleViewDetails(dept);
+        break;
+      case "edit":
+        handleEdit(dept);
+        break;
+      case "disable":
+        handleDisable(dept);
+        break;
+      case "activate":
+        handleActivate(dept);
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleSearchChange = (e) => setSearchTerm(e.target.value);
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     fetchData();
   };
-
   const handleAdd = () => {
     setCurrentDepartment(null);
     setIsEditModalOpen(true);
@@ -96,16 +156,7 @@ const DepartmentPage = () => {
     ) {
       try {
         await api.post(`/PhongBan/${dept.maPhongBan}/disable`);
-
-        // THAY ĐỔI Ở ĐÂY: Cập nhật state trực tiếp thay vì gọi fetchData()
-        setPhongBans((prevPhongBans) =>
-          prevPhongBans.map(
-            (pb) =>
-              pb.maPhongBan === dept.maPhongBan
-                ? { ...pb, trangThai: false } // Tìm đúng phòng ban và đổi trạng thái
-                : pb // Giữ nguyên các phòng ban khác
-          )
-        );
+        fetchData();
       } catch (error) {
         alert(
           error.response?.data?.message || "Lỗi khi vô hiệu hóa phòng ban."
@@ -122,17 +173,13 @@ const DepartmentPage = () => {
     ) {
       try {
         await api.post(`/PhongBan/${dept.maPhongBan}/activate`);
-
-        setPhongBans((prevPhongBans) =>
-          prevPhongBans.map((pb) =>
-            pb.maPhongBan === dept.maPhongBan ? { ...pb, trangThai: true } : pb
-          )
-        );
+        fetchData();
       } catch (error) {
         alert(error.response?.data?.message || "Lỗi khi kích hoạt lại.");
       }
     }
   };
+
   const handleSave = async (deptData) => {
     try {
       const dataToSave = {
@@ -198,14 +245,19 @@ const DepartmentPage = () => {
                   <th>Địa chỉ</th>
                   <th>Số điện thoại</th>
                   <th>Trạng thái</th>
-                  <th></th>
+                  <th style={{ width: "60px" }}></th>
                 </tr>
               </thead>
               <tbody>
                 {phongBans.map((dept) => (
                   <tr key={dept.maPhongBan}>
                     <td>{dept.maPhongBan}</td>
-                    <td>{dept.tenPhongBan}</td>
+                    <td
+                      className="employee-name-cell"
+                      onContextMenu={(e) => handleToggleMenu(e, dept)}
+                    >
+                      {dept.tenPhongBan}
+                    </td>
                     <td>{dept.diaChi}</td>
                     <td>{dept.sdt_PhongBan}</td>
                     <td style={{ color: dept.trangThai ? "green" : "red" }}>
@@ -214,34 +266,10 @@ const DepartmentPage = () => {
                     <td className="actions-cell">
                       <button
                         className="action-btn"
-                        onClick={(e) => handleToggleContextMenu(e, dept)}
+                        onClick={(e) => handleToggleMenu(e, dept)}
                       >
                         <FaEllipsisV />
                       </button>
-                      {activeContextMenu === dept.maPhongBan && (
-                        <div className="context-menu in-table">
-                          <ul>
-                            <li onClick={() => handleViewEmployees(dept)}>
-                              <FaUsers /> Xem nhân viên
-                            </li>
-                            <li onClick={() => handleViewDetails(dept)}>
-                              <FaEye /> Xem chi tiết
-                            </li>
-                            <li onClick={() => handleEdit(dept)}>
-                              <FaEdit /> Chỉnh sửa
-                            </li>
-                            {dept.trangThai ? (
-                              <li onClick={() => handleDisable(dept)}>
-                                <FaTrash /> Vô hiệu hóa
-                              </li>
-                            ) : (
-                              <li onClick={() => handleActivate(dept)}>
-                                <FaUndo /> Kích hoạt
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -250,6 +278,16 @@ const DepartmentPage = () => {
           </div>
         )}
       </div>
+
+      {activeMenu.id && (
+        <DepartmentContextMenu
+          department={phongBans.find((d) => d.maPhongBan === activeMenu.id)}
+          onAction={handleAction}
+          onClose={() => setActiveMenu({ id: null, x: 0, y: 0 })}
+          x={activeMenu.x}
+          y={activeMenu.y}
+        />
+      )}
 
       {isEditModalOpen && (
         <DepartmentModal

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaPlus } from "react-icons/fa";
 import "../styles/MyTimekeepingPage.css";
+import LeaveRequestModal from "../components/modals/LeaveRequestModal";
 
 const getDayOfWeek = (year, month, day) => {
   const date = new Date(year, month, day);
@@ -21,11 +22,16 @@ const getDayOfWeek = (year, month, day) => {
 const MyTimekeepingPage = () => {
   const { employeeId } = useParams();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [attendanceData, setAttendanceData] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async (date) => {
+  // CẬP NHẬT: Tách state để quản lý dữ liệu rõ ràng hơn
+  const [summary, setSummary] = useState(null);
+  const [recordsMap, setRecordsMap] = useState(new Map()); // Dữ liệu chấm công đã duyệt
+  const [pendingRequestsMap, setPendingRequestsMap] = useState(new Map()); // MỚI: Dữ liệu đơn đang chờ
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchData = useCallback(
+    async (date) => {
       if (!employeeId) return;
       setLoading(true);
       try {
@@ -34,15 +40,41 @@ const MyTimekeepingPage = () => {
         const response = await api.get(
           `/ChamCong/${employeeId}?year=${year}&month=${month}`
         );
-        setAttendanceData(response.data);
+
+        const {
+          dailyRecords = [],
+          summaries = {},
+          pendingRequests = [],
+        } = response.data;
+        setSummary(summaries[employeeId] || null);
+
+        const records = new Map();
+        dailyRecords.forEach((rec) => {
+          // SỬA Ở ĐÂY: Đổi cách lấy ngày để tránh lỗi timezone và đồng bộ với trang quản lý
+          const day = parseInt(rec.ngayChamCong.split("-")[2], 10);
+          records.set(day, rec);
+        });
+        setRecordsMap(records);
+
+        const pending = new Map();
+        pendingRequests.forEach((req) => {
+          // SỬA Ở ĐÂY: Đổi luôn cho nhất quán
+          const day = new Date(req.ngayNghi).getUTCDate(); // Giữ nguyên getUTCDate vì đây là full date object
+          pending.set(day, req);
+        });
+        setPendingRequestsMap(pending);
       } catch (error) {
         console.error("Lỗi tải dữ liệu chấm công:", error);
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [employeeId]
+  );
+
+  useEffect(() => {
     fetchData(currentDate);
-  }, [currentDate, employeeId]);
+  }, [currentDate, fetchData]);
 
   const changeMonth = (offset) => {
     setCurrentDate(
@@ -50,19 +82,39 @@ const MyTimekeepingPage = () => {
     );
   };
 
-  // Cập nhật hàm tính toán để bao gồm cả ngày làm nửa buổi
-  const summary = useMemo(() => {
-    return attendanceData.reduce(
-      (acc, record) => {
-        if (record.ngayCong === 1.0) acc.presentDays++;
-        else if (record.ngayCong === 0.5) acc.leaveDays++;
-        else if (record.ngayCong === 0.0) acc.absentDays++;
-        else if (record.ngayCong === -0.5) acc.halfWorkDays++;
-        return acc;
-      },
-      { presentDays: 0, leaveDays: 0, absentDays: 0, halfWorkDays: 0 }
-    );
-  }, [attendanceData]);
+  // CẬP NHẬT: Xử lý cập nhật giao diện tức thì sau khi gửi đơn
+  const handleLeaveRequestSubmit = async (requestData) => {
+    try {
+      const leaveRequestPayload = {
+        maNhanVien: employeeId,
+        ngayNghi: requestData.ngayNghi,
+        lyDo: requestData.lyDo,
+      };
+
+      const response = await api.post("/DonNghiPhep", leaveRequestPayload);
+
+      alert("Gửi đơn xin nghỉ thành công! Vui lòng chờ quản lý duyệt.");
+      setIsModalOpen(false);
+
+      const newPendingRequest = response.data;
+      const day = new Date(newPendingRequest.ngayNghi).getUTCDate();
+      setPendingRequestsMap((prevMap) =>
+        new Map(prevMap).set(day, newPendingRequest)
+      );
+    } catch (error) {
+      let errorMessage = "Gửi đơn thất bại. Vui lòng thử lại.";
+      if (error.response?.data) {
+        const { errors, message, title } = error.response.data;
+        if (errors) errorMessage = Object.values(errors).flat().join("\n");
+        else if (message) errorMessage = message;
+        else if (title) errorMessage = title;
+        else errorMessage = JSON.stringify(error.response.data, null, 2);
+      } else {
+        errorMessage = error.message;
+      }
+      alert("Đã xảy ra lỗi:\n" + errorMessage);
+    }
+  };
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -71,22 +123,35 @@ const MyTimekeepingPage = () => {
   ).getDate();
   const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  const getWorkDayStyle = (record) => {
-    if (record?.trangThaiDonNghi) {
-      switch (record.trangThaiDonNghi) {
-        case "Chờ duyệt":
-          return { text: "Chờ duyệt", className: "status-pending" };
-        case "Từ chối":
-          return { text: "Từ chối", className: "status-absent" };
-      }
+  // MỚI: Hàm hiển thị trạng thái kết hợp
+  const getWorkDayStyleAndStatus = (day) => {
+    if (recordsMap.has(day)) {
+      const record = recordsMap.get(day);
+      const ngayCong = record?.ngayCong;
+      if (ngayCong === 1.0)
+        return {
+          text: "1.0",
+          className: record.ghiChu ? "status-leave" : "status-present",
+          note: record.ghiChu,
+        };
+      if (ngayCong === -0.5)
+        return {
+          text: "-0.5",
+          className: "status-half-day",
+          note: record.ghiChu,
+        };
+      if (ngayCong === 0.0)
+        return { text: "0.0", className: "status-absent", note: record.ghiChu };
     }
-
-    const ngayCong = record?.ngayCong;
-    if (ngayCong === 1.0) return { text: "1.0", className: "status-present" };
-    if (ngayCong === 0.5) return { text: "0.5", className: "status-leave" };
-    if (ngayCong === 0.0) return { text: "0.0", className: "status-absent" };
-    if (ngayCong === -0.5) return { text: "0.5", className: "status-half-day" };
-    return { text: "-", className: "" };
+    if (pendingRequestsMap.has(day)) {
+      const request = pendingRequestsMap.get(day);
+      return {
+        text: "Chờ duyệt",
+        className: "status-pending",
+        note: request.lyDo,
+      };
+    }
+    return { text: "", className: "", note: "" };
   };
 
   return (
@@ -94,41 +159,30 @@ const MyTimekeepingPage = () => {
       <div className="timekeeping-header">
         <div className="month-navigator">
           <button onClick={() => changeMonth(-1)}>
-            {" "}
-            <FaChevronLeft />{" "}
+            <FaChevronLeft />
           </button>
           <h2>{`Tháng ${
             currentDate.getMonth() + 1
           }, ${currentDate.getFullYear()}`}</h2>
           <button onClick={() => changeMonth(1)}>
-            {" "}
-            <FaChevronRight />{" "}
+            <FaChevronRight />
           </button>
         </div>
-        <div className="work-schedule-section">
-          <h4>Giờ làm việc quy định</h4>
-          <p>
-            <strong>Buổi sáng:</strong> 8:00 - 12:00
-          </p>
-          <p>
-            <strong>Buổi chiều:</strong> 13:30 - 17:30
-          </p>
-        </div>
+        <button className="add-btn" onClick={() => setIsModalOpen(true)}>
+          <FaPlus /> Đăng ký nghỉ
+        </button>
       </div>
 
       <div className="timekeeping-list">
         <div className="list-header">
           <div className="header-date">Ngày</div>
-          <div className="header-status">Trạng thái chấm công</div>
+          <div className="header-status">Trạng thái</div>
         </div>
         {loading ? (
           <div className="loading-text">Đang tải dữ liệu...</div>
         ) : (
           allDays.map((day) => {
-            const record = attendanceData.find(
-              (r) => new Date(r.ngayChamCong).getUTCDate() === day
-            );
-            const style = getWorkDayStyle(record);
+            const { text, className, note } = getWorkDayStyleAndStatus(day);
             return (
               <div className="day-row" key={day}>
                 <div className="date-col">
@@ -144,10 +198,9 @@ const MyTimekeepingPage = () => {
                   </span>
                 </div>
                 <div className="status-col">
-                  <span className={style.className}>{style.text}</span>
-                  {record?.ghiChu && (
-                    <span className="status-note">{record.ghiChu}</span>
-                  )}
+                  <span className={className}>{text}</span>
+                  {/* Thêm dòng này để hiển thị lý do/ghi chú */}
+                  {note && <span className="reason-note">{note}</span>}
                 </div>
               </div>
             );
@@ -155,27 +208,53 @@ const MyTimekeepingPage = () => {
         )}
       </div>
 
+      {/* Phần summary và modal không đổi */}
       <div className="summary-section">
         <h4>Tổng kết công tháng {currentDate.getMonth() + 1}</h4>
-        <div className="summary-grid">
-          <div className="summary-item">
-            <span className="summary-value green">{summary.presentDays}</span>
-            <span className="summary-label">Ngày công</span>
+        {summary ? (
+          <div className="summary-grid">
+            <div className="summary-item">
+              <span className="summary-value">
+                {summary.tongCong?.toFixed(1) || "0.0"}
+              </span>
+              <span className="summary-label">Tổng công</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-value green">
+                {summary.diLamDu || 0}
+              </span>
+              <span className="summary-label">Ngày đi đủ</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-value orange">
+                {summary.nghiCoPhep || 0}
+              </span>
+              <span className="summary-label">Ngày nghỉ phép</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-value blue">
+                {summary.lamNuaNgay || 0}
+              </span>
+              <span className="summary-label">Ngày làm nửa buổi</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-value red">
+                {summary.nghiKhongPhep || 0}
+              </span>
+              <span className="summary-label">Ngày vắng</span>
+            </div>
           </div>
-          <div className="summary-item">
-            <span className="summary-value blue">{summary.halfWorkDays}</span>
-            <span className="summary-label">Ngày làm nửa buổi</span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-value orange">{summary.leaveDays}</span>
-            <span className="summary-label">Ngày nghỉ phép</span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-value red">{summary.absentDays}</span>
-            <span className="summary-label">Ngày vắng</span>
-          </div>
-        </div>
+        ) : (
+          <p>Chưa có dữ liệu chấm công cho tháng này.</p>
+        )}
       </div>
+
+      {isModalOpen && (
+        <LeaveRequestModal
+          onSave={handleLeaveRequestSubmit}
+          onCancel={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

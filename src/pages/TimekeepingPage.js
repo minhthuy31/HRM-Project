@@ -11,6 +11,7 @@ const TimekeepingPage = () => {
   const [employees, setEmployees] = useState([]);
   const [attendance, setAttendance] = useState({});
   const [loading, setLoading] = useState(true);
+  const [summaries, setSummaries] = useState({}); // State mới cho thống kê
 
   // State cho việc chỉnh sửa và lựa chọn
   const [editingCell, setEditingCell] = useState(null); // Sửa 1 ô
@@ -31,15 +32,21 @@ const TimekeepingPage = () => {
       ]);
 
       setEmployees(empRes.data);
-      const attendanceMap = {};
-      attendanceRes.data.forEach((rec) => {
-        const dateKey = parseInt(rec.ngayChamCong.split("-")[2], 10);
 
-        if (!attendanceMap[rec.maNhanVien]) {
-          attendanceMap[rec.maNhanVien] = {};
-        }
-        attendanceMap[rec.maNhanVien][dateKey] = rec;
-      });
+      const { dailyRecords, summaries: summaryData } = attendanceRes.data;
+
+      setSummaries(summaryData || {});
+      const attendanceMap = {};
+      if (dailyRecords) {
+        dailyRecords.forEach((rec) => {
+          const dateKey = parseInt(rec.ngayChamCong.split("-")[2], 10);
+
+          if (!attendanceMap[rec.maNhanVien]) {
+            attendanceMap[rec.maNhanVien] = {};
+          }
+          attendanceMap[rec.maNhanVien][dateKey] = rec;
+        });
+      }
       setAttendance(attendanceMap);
     } catch (error) {
       console.error("Lỗi tải dữ liệu chấm công:", error);
@@ -47,7 +54,6 @@ const TimekeepingPage = () => {
       setLoading(false);
     }
   }, []);
-
   useEffect(() => {
     fetchData(currentDate);
   }, [currentDate, fetchData]);
@@ -69,18 +75,19 @@ const TimekeepingPage = () => {
   const getWorkDayStyle = (record) => {
     const ngayCong = record?.ngayCong;
     if (ngayCong === 1.0) {
-      return { text: "1.0", className: "status-present" };
-    }
-    if (ngayCong === -0.5) {
-      return { text: "-0.5", className: "status-half-day" };
+      // Nếu có GhiChu (lý do) -> "Nghỉ có phép"
+      return {
+        text: "1.0",
+        className: record?.ghiChu ? "status-leave" : "status-present",
+      };
     }
     if (ngayCong === 0.5) {
-      return { text: "0.5", className: "status-leave" };
+      return { text: "0.5", className: "status-half-day" };
     }
     if (ngayCong === 0.0) {
       return { text: "0.0", className: "status-absent" };
     }
-    return { text: "", className: "" }; // Mặc định sẽ là đi dủ
+    return { text: "", className: "" };
   };
   /*
   const handleCellClick = (maNhanVien, day) => {
@@ -228,19 +235,30 @@ const TimekeepingPage = () => {
     const day = editingCell.day;
     const formattedDate = `${year}-${String(month).padStart(2, "0")}-${String(
       day
-    ).padStart(2, "0")}`; //ép kiểu ngày<10 có số 0 đằng trc
+    ).padStart(2, "0")}`;
+
     const record = {
       maNhanVien: editingCell.maNhanVien,
       ngayChamCong: formattedDate,
       ngayCong: editData.ngayCong,
       ghiChu: editData.ghiChu,
     };
+
     try {
-      await api.post("/ChamCong/upsert", record);
+      const response = await api.post("/ChamCong/upsert", record);
       setEditingCell(null);
+
+      if (response.data.wasConverted) {
+        alert("Lưu thành công!\nBạn đã hết ngày nghỉ có phép.");
+      }
+
       fetchData(currentDate);
     } catch (error) {
-      console.error("Lỗi cập nhật chấm công:", error);
+      if (error.response && error.response.data) {
+        alert(`Lỗi: ${error.response.data}`);
+      } else {
+        console.error("Lỗi cập nhật chấm công:", error);
+      }
     }
   };
 
@@ -290,60 +308,72 @@ const TimekeepingPage = () => {
                       {day}
                     </th>
                   ))}
+                  <th className="summary-col">Tổng công</th>
                 </tr>
               </thead>
               <tbody>
-                {employees.map((emp) => (
-                  <tr key={emp.maNhanVien}>
-                    <td
-                      className={`employee-name-col ${
-                        selection.type === "row" &&
-                        selection.id === emp.maNhanVien
-                          ? "selected"
-                          : ""
-                      }`}
-                      onClick={() => handleSelectRow(emp.maNhanVien)}
-                    >
-                      {emp.hoTen}
-                    </td>
-                    {daysArray.map((day) => {
-                      const record = attendance[emp.maNhanVien]?.[day] || {};
-                      const style = getWorkDayStyle(record);
-                      const selected = isCellSelected(emp.maNhanVien, day);
-                      return (
-                        <td
-                          key={day}
-                          className={`attendance-cell ${style.className} ${
-                            selected ? "selected" : ""
-                          }`}
-                          onMouseDown={() =>
-                            handleMouseDown(emp.maNhanVien, day)
-                          }
-                          onMouseEnter={() =>
-                            handleMouseEnter(emp.maNhanVien, day)
-                          }
-                          onClick={() =>
-                            setEditingCell({
-                              maNhanVien: emp.maNhanVien,
-                              day,
-                              ...record,
-                            })
-                          }
-                        >
-                          <span>{style.text}</span>
-                          {record.ghiChu && (
-                            <>
-                              <br />
+                {employees.map((emp) => {
+                  const summary = summaries[emp.maNhanVien] || {};
+                  return (
+                    <tr key={emp.maNhanVien}>
+                      <td
+                        className="employee-name-col"
+                        onClick={() => handleSelectRow(emp.maNhanVien)}
+                      >
+                        <div className="employee-info">
+                          <span className="font-bold">{emp.hoTen}</span>
+                          <br />
+                          <span className="text-red-400 font-normal opacity-70">
+                            {emp.maNhanVien}
+                          </span>
+                        </div>
+                      </td>
+
+                      {daysArray.map((day) => {
+                        const record = attendance[emp.maNhanVien]?.[day] || {};
+                        const style = getWorkDayStyle(record);
+                        const selected = isCellSelected(emp.maNhanVien, day);
+                        return (
+                          <td
+                            key={day}
+                            className={`attendance-cell ${style.className} ${
+                              selected ? "selected" : ""
+                            }`}
+                            onMouseDown={() =>
+                              handleMouseDown(emp.maNhanVien, day)
+                            }
+                            onMouseEnter={() =>
+                              handleMouseEnter(emp.maNhanVien, day)
+                            }
+                            onClick={() =>
+                              setEditingCell({
+                                maNhanVien: emp.maNhanVien,
+                                day,
+                                ...record,
+                              })
+                            }
+                          >
+                            <span>{style.text}</span>
+                            <br></br>
+                            {record.ghiChu && (
                               <span className="reason-note">
                                 {record.ghiChu}
                               </span>
-                            </>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                            )}
+                          </td>
+                        );
+                      })}
+
+                      <td className="summary-col">
+                        <strong>
+                          {summary.tongCong !== undefined
+                            ? summary.tongCong.toFixed(1)
+                            : "N/A"}
+                        </strong>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -356,6 +386,7 @@ const TimekeepingPage = () => {
           cellData={editingCell}
           onSave={handleSave}
           onCancel={() => setEditingCell(null)}
+          remainingLeave={summaries[editingCell.maNhanVien]?.remainingLeaveDays}
         />
       )}
 

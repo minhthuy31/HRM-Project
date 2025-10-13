@@ -1,17 +1,33 @@
 import React, { useState } from "react";
 
 const BulkEditModal = ({ onSave, onCancel }) => {
-  const [ngayCong, setNgayCong] = useState("");
+  const [selectedValue, setSelectedValue] = useState("");
 
   const handleSave = () => {
-    if (ngayCong === "") {
+    if (selectedValue === "") {
       alert("Vui lòng chọn một trạng thái để áp dụng.");
       return;
     }
-    onSave({
-      ngayCong: parseFloat(ngayCong),
-      // Ghi chú sẽ được xử lý riêng nếu cần
-    });
+
+    let dataToSave = {};
+    switch (selectedValue) {
+      case "1.0_work":
+        dataToSave = { ngayCong: 1.0, ghiChu: null }; // Đi làm đủ
+        break;
+      case "1.0_leave":
+        dataToSave = { ngayCong: 1.0, ghiChu: "Nghỉ có phép" }; // Nghỉ có phép
+        break;
+      case "0.5":
+        dataToSave = { ngayCong: 0.5, ghiChu: "Làm nửa ngày" }; // Làm nửa ngày
+        break;
+      case "0.0":
+        dataToSave = { ngayCong: 0.0, ghiChu: "Nghỉ không phép" }; // Nghỉ không phép
+        break;
+      default:
+        return;
+    }
+
+    onSave(dataToSave);
   };
 
   return (
@@ -30,16 +46,16 @@ const BulkEditModal = ({ onSave, onCancel }) => {
           <div className="form-group">
             <label>Chọn giá trị để điền</label>
             <select
-              value={ngayCong}
-              onChange={(e) => setNgayCong(e.target.value)}
+              value={selectedValue}
+              onChange={(e) => setSelectedValue(e.target.value)}
             >
               <option value="" disabled>
                 -- Chọn trạng thái --
               </option>
-              <option value={1.0}>1.0 - Đi làm đủ</option>
-              <option value={-0.5}>-0.5 - Làm nửa ngày</option>
-              <option value={0.5}>0.5 - Nghỉ có phép (Không kèm lý do)</option>
-              <option value={0.0}>0.0 - Nghỉ không phép</option>
+              <option value="1.0_work">1.0 - Đi làm đủ</option>
+              <option value="1.0_leave">1.0 - Nghỉ có phép</option>
+              <option value="0.5">0.5 - Làm nửa ngày</option>
+              <option value="0.0">0.0 - Nghỉ không phép</option>
             </select>
           </div>
         </div>
