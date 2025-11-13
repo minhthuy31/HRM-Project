@@ -1,0 +1,92 @@
+.payroll-page-container {
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+.payroll-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.month-navigator {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.month-navigator button {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-payroll-btn {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.payroll-table-container {
+    overflow-x: auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.payroll-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payroll-table th,
+.payroll-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.payroll-table th {
+    background-color: #f7f7f7;
+    font-weight: 600;
+}
+
+.payroll-table .employee-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.payroll-table .employee-info span {
+    font-size: 0.8em;
+    color: #888;
+}
+
+.payroll-table .final-salary {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.salary-input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    width: 120px;
+    font-size: 14px;
+}
+
+.salary-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}

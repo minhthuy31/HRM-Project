@@ -1,70 +1,57 @@
-# Getting Started with Create React App
+# Hệ thống Quản lý Nhân sự (HRM)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Một giải pháp Quản lý Nguồn nhân lực (HRM) full-stack, được xây dựng để cung cấp một nền tảng tập trung cho các nghiệp vụ nhân sự.
 
-## Available Scripts
+Dự án bao gồm một **Backend C# .NET API** và một **Frontend React.js**, được thiết kế để phục vụ hai nhóm người dùng chính: **Quản lý** và **Nhân viên**.
 
-In the project directory, you can run:
+## 🏛️ Các phân hệ (Modules)
 
-### `npm start`
+Hệ thống được tổ chức thành các module chức năng chính:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Xác thực & Phân quyền (Authentication & Authorization):**
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+  - Xử lý đăng nhập an toàn (JWT) và phân quyền truy cập dựa trên 5 vai trò (Giám đốc, Trưởng phòng, Nhân sự, Nhân viên...).
 
-### `npm test`
+- **Quản lý Nhân viên (Employee Management):**
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  - Cung cấp các thao tác (CRUD) để quản lý hồ sơ và thông tin chi tiết của nhân viên.
 
-### `npm run build`
+- **Quản lý Thời gian (Time & Attendance):**
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+  - Bao gồm chức năng chấm công (`ChamCong`) và quản lý đơn xin nghỉ phép (`DonNghiPhep`) với quy trình duyệt.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Quản lý Lương (Payroll):**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+  - Cung cấp một giao diện để tổng hợp dữ liệu chấm công, tính toán và chốt bảng lương hàng tháng.
 
-### `npm run eject`
+- **Cổng thông tin Nhân viên (Employee Portal):**
+  - Một giao diện (`EmployeeHomePage`) dành riêng cho nhân viên, cho phép họ xem thông tin cá nhân, bảng công, phiếu lương và gửi các yêuCầ.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🛠️ Công nghệ sử dụng (Tech Stack)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+| Lĩnh vực     | Công nghệ                                                |
+| :----------- | :------------------------------------------------------- |
+| **Backend**  | C# .NET 7/8, ASP.NET Core Web API, Entity Framework Core |
+| **Frontend** | React.js, React Router, Axios                            |
+| **Database** | Microsoft SQL Server                                     |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 🚀 Khởi chạy dự án
 
-## Learn More
+Dự án yêu cầu chạy cả hai thành phần (Backend và Frontend) song song.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 1. Backend (.NET API)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1.  Mở file `.sln` bằng Visual Studio.
+2.  Cập nhật `ConnectionStrings` trong `appsettings.json` để trỏ đến CSDL SQL Server của bạn.
+3.  Mở **Package Manager Console** và chạy lệnh `update-database`.
+4.  Nhấn **F5** để khởi chạy máy chủ API.
 
-### Code Splitting
+### 2. Frontend (React App)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1.  Điều hướng đến thư mục dự án Frontend.
+2.  Chạy `npm install` để cài đặt các gói.
+3.  Cập nhật `baseURL` trong `src/api.js` để trỏ đến địa chỉ API Backend đang chạy.
+4.  Chạy `npm start` để khởi chạy ứng dụng.
+5.  Truy cập [http://localhost:3000](http://localhost:3000).

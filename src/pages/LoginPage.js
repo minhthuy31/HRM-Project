@@ -17,28 +17,26 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const response = await api.post("/Auth/login", { email, password });
-
-      // Lấy các dữ liệu cần thiết từ API response
       const { token, role, maNhanVien } = response.data;
 
-      // Lưu token vào localStorage
       localStorage.setItem("token", token);
 
-      // Phân luồng người dùng dựa trên vai trò
+      const normalizedRole = role?.toLowerCase();
+
+      // ***** SỬA LỖI QUAN TRỌNG NHẤT Ở ĐÂY *****
+      // So sánh chuỗi đã chuẩn hóa (chữ thường) với các chuỗi chữ thường
       if (
-        role === "Admin" ||
-        role === "Giám đốc" ||
-        role === "Trưởng phòng" ||
-        role === "Nhân viên nhân sự" ||
-        role === "Phó phòng"
+        normalizedRole === "giám đốc" ||
+        normalizedRole === "trưởng phòng" ||
+        normalizedRole === "nhân sự phòng" ||
+        normalizedRole === "nhân sự tổng"
       ) {
-        navigate("/dashboard"); // Các role quản lý vào trang dashboard
-      } else if (role === "Nhân viên") {
-        navigate(`/employee-home/${maNhanVien}`); // Nhân viên vào trang home của họ với ID
+        navigate("/dashboard");
+      } else if (normalizedRole === "nhân viên") {
+        navigate(`/employee-home/${maNhanVien}`);
       } else {
-        // Mặc định hoặc xử lý cho các role không xác định
-        setError("Vai trò người dùng không hợp lệ.");
-        localStorage.removeItem("token"); // Xóa token nếu role không đúng
+        setError(`Vai trò người dùng không hợp lệ: '${role}'`);
+        localStorage.removeItem("token");
       }
     } catch (err) {
       setError(
