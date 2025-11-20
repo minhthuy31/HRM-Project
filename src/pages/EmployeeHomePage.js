@@ -6,6 +6,10 @@ import { Link, useNavigate, useParams, Outlet } from "react-router-dom";
 import "../styles/EmployeeHome.css";
 import LeaveRequestModal from "../components/modals/LeaveRequestModal";
 
+import CheckInScanner from "../components/CheckInScanner";
+import "../styles/Modal.css";
+import "../styles/CheckInScanner.css";
+
 const getImageUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("blob:")) return path;
@@ -19,6 +23,9 @@ const EmployeeHomePage = () => {
   const { employeeId } = useParams();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // --- STATE MỚI CHO QUÉT QR ---
+  const [isScannerOpen, setIsScannerOpen] = useState(false); // 2. State quản lý modal quét
+  const [scanResult, setScanResult] = useState(null); // Để lưu thông báo quét
 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode);
@@ -81,6 +88,21 @@ const EmployeeHomePage = () => {
     }
   };
 
+  // --- HÀM MỚI XỬ LÝ KẾT QUẢ QUÉT ---
+  const handleScanSuccess = (message) => {
+    // 3. Hàm chạy khi quét thành công
+    setScanResult({ type: "success", text: message });
+    setIsScannerOpen(false); // Tắt camera
+    // Tự động xóa thông báo sau 5 giây
+    setTimeout(() => setScanResult(null), 5000);
+  };
+
+  const handleScanError = (message) => {
+    // 4. Hàm chạy khi quét lỗi
+    setScanResult({ type: "error", text: message });
+    // Không tắt camera, để người dùng quét lại
+  };
+
   if (loading || !user) {
     return <div className="loading-fullscreen">Đang tải trang cá nhân...</div>;
   }
@@ -138,7 +160,18 @@ const EmployeeHomePage = () => {
                 Đăng ký nghỉ
               </button>
               <button className="action-btn">Đăng ký OT / Công tác</button>
+              {/* 5. THÊM NÚT QUÉT QR VÀO ĐÂY */}
+              <button
+                className="action-btn action-btn-checkin" // Dùng class mới để tô màu
+                onClick={() => {
+                  setScanResult(null); // Xóa lỗi cũ (nếu có)
+                  setIsScannerOpen(true);
+                }}
+              >
+                Quét QR Chấm công
+              </button>
             </div>
+
             <nav className="info-links">
               <ul>
                 <li>
@@ -176,6 +209,41 @@ const EmployeeHomePage = () => {
           onSave={handleSaveLeaveRequest}
           onCancel={() => setIsModalOpen(false)}
         />
+      )}
+
+      {/* 6. THÊM MODAL QUÉT QR MỚI VÀO ĐÂY */}
+      {isScannerOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content scanner-modal">
+            <h2>Đưa mã QR vào khung hình</h2>
+
+            {/* Đây là component camera */}
+            <CheckInScanner
+              onScanSuccess={handleScanSuccess}
+              onScanError={handleScanError}
+            />
+
+            {/* Hiển thị lỗi quét (nếu có) */}
+            {scanResult && scanResult.type === "error" && (
+              <p className="scan-error">{scanResult.text}</p>
+            )}
+
+            <button
+              className="modal-close-btn"
+              onClick={() => {
+                setIsScannerOpen(false);
+                setScanResult(null); // Xóa thông báo
+              }}
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Hiển thị thông báo thành công (bên ngoài modal) */}
+      {scanResult && scanResult.type === "success" && (
+        <div className="scan-success-popup">{scanResult.text}</div>
       )}
     </>
   );

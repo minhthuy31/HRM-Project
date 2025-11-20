@@ -11,9 +11,11 @@ import {
   FaUserCircle,
   FaSearch,
   FaEllipsisV,
+  FaDownload,
 } from "react-icons/fa";
 import "../styles/EmployeePage.css";
 import EmployeeModal from "../components/modals/EmployeeModal";
+import * as XLSX from "xlsx";
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -265,6 +267,43 @@ const EmployeePage = () => {
   //     </DashboardLayout>
   //   );
   // }
+  const handleExportExcel = () => {
+    if (employees.length === 0) {
+      alert("Không có dữ liệu nhân viên để xuất.");
+      return;
+    }
+    const dataToExport = employees.map((emp) => {
+      return {
+        "Mã NV": emp.maNhanVien,
+        "Họ Tên": emp.hoTen,
+        Email: emp.email,
+        "Phòng Ban": emp.tenPhongBan,
+        "Chức Vụ": emp.tenChucVu,
+        "Trạng Thái": emp.trangThai ? "Hoạt động" : "Đã nghỉ",
+        SĐT: emp.sdt_NhanVien,
+        CCCD: emp.cccd,
+        "Ngày Sinh": emp.ngaySinh
+          ? new Date(emp.ngaySinh).toLocaleDateString("vi-VN")
+          : "",
+        "Trình Độ": emp.tenTrinhDoHocVan,
+        "Chuyên Ngành": emp.tenChuyenNganh,
+      };
+    });
+
+    // 2. Tạo một worksheet (trang tính) từ mảng JSON
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // 3. Tạo một workbook (file Excel) mới
+    const wb = XLSX.utils.book_new();
+
+    // 4. Thêm worksheet vào workbook
+    XLSX.utils.book_append_sheet(wb, ws, "DanhSachNhanVien");
+    // 5. Tạo file và kích hoạt tải về
+    const fileName = `DanhSachNhanVien_${
+      new Date().toISOString().split("T")[0]
+    }.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   return (
     <DashboardLayout>
@@ -342,6 +381,13 @@ const EmployeePage = () => {
                 ))}
               </select>
             </div>
+            <button
+              onClick={handleExportExcel}
+              className="add-btn"
+              style={{ marginRight: "10px", backgroundColor: "#1D6F42" }} // Màu xanh lá
+            >
+              <FaDownload /> Xuất Excel
+            </button>
             <button
               onClick={() => setModal({ type: "edit", data: null })}
               className="add-btn"

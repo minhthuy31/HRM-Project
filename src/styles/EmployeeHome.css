@@ -307,3 +307,62 @@
   font-size: 13px;
   color: var(--toggle-icon-color);
 }
+
+/* Nút bấm check-in (màu xanh lá) */
+.action-btn-checkin {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #28a745; /* Màu xanh lá */
+    color: white;
+    margin-top: 10px; /* Thêm khoảng cách */
+}
+
+.action-btn-checkin:hover {
+    background-color: #218838;
+}
+
+/* Tùy chỉnh modal cho scanner */
+.scanner-modal {
+    max-width: 450px;
+    padding: 20px;
+}
+
+.scanner-modal h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+/* CSS cho thông báo lỗi/thành công */
+.scan-error {
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.scan-success-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #28a745;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 2000;
+    animation: fadeInOut 5s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; bottom: 0; }
+  20% { opacity: 1; bottom: 20px; }
+  80% { opacity: 1; bottom: 20px; }
+  100% { opacity: 0; bottom: 0; }
+}

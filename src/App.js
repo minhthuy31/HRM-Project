@@ -24,6 +24,7 @@ import EmployeeHomePage from "./pages/EmployeeHomePage";
 import EmployeeDetailPageNV from "./pages/EmployeeDetailPageNV";
 import EmployeeWelcome from "./pages/EmployeeWelcome";
 import MyTimekeepingPage from "./pages/MyTimekeepingPage";
+import KioskPage from "./pages/KioskPage";
 
 function App() {
   return (
@@ -43,6 +44,8 @@ function App() {
         <Route path="/khen-thuong" element={<DisciplinePage />} />
         <Route path="/dao-tao" element={<TrainingPage />} />
         <Route path="/bao-cao" element={<ReportsPage />} />
+        <Route path="/kiosk" element={<KioskPage />} />
+
         <Route path="/nhan-vien/:employeeId" element={<EmployeeDetailPage />} />
         <Route
           path="/nhan-vien/:employeeId/edit"
