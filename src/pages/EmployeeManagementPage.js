@@ -292,7 +292,20 @@ const EmployeePage = () => {
 
     // 2. Tạo một worksheet (trang tính) từ mảng JSON
     const ws = XLSX.utils.json_to_sheet(dataToExport);
-
+    const cols = [
+      { wch: 10 }, // Mã NV
+      { wch: 25 }, // Họ Tên
+      { wch: 30 }, // Email
+      { wch: 20 }, // Phòng Ban
+      { wch: 20 }, // Chức Vụ
+      { wch: 15 }, // Trạng Thái
+      { wch: 15 }, // SĐT
+      { wch: 15 }, // CCCD
+      { wch: 15 }, // Ngày Sinh
+      { wch: 20 }, // Trình Độ
+      { wch: 20 }, // Chuyên Ngành
+    ];
+    ws["!cols"] = cols;
     // 3. Tạo một workbook (file Excel) mới
     const wb = XLSX.utils.book_new();
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { api } from "../api";
 import "../styles/LoginPage.css";
 import logo from "../assets/logo.png";
+import "../App.css";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -23,8 +24,6 @@ const LoginPage = () => {
 
       const normalizedRole = role?.toLowerCase();
 
-      // ***** SỬA LỖI QUAN TRỌNG NHẤT Ở ĐÂY *****
-      // So sánh chuỗi đã chuẩn hóa (chữ thường) với các chuỗi chữ thường
       if (
         normalizedRole === "giám đốc" ||
         normalizedRole === "trưởng phòng" ||
@@ -52,7 +51,7 @@ const LoginPage = () => {
       <div className="login-box">
         <img src={logo} alt="Logo Công ty" className="login-logo" />
         <h2>Đăng nhập Hệ thống</h2>
-        {error && <div className="login-alert">{error}</div>}
+        {error && <div className="alert alert-danger">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <input

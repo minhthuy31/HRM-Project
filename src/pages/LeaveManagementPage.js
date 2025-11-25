@@ -29,22 +29,22 @@ const LeaveManagementPage = () => {
 
   const handleApprove = async (request) => {
     try {
-      await api.put(`/DonNghiPhep/${request.id}/approve`);
+      await api.post(`/DonNghiPhep/approve/${request.id}`);
       alert("Đã duyệt đơn thành công!");
       fetchAllRequests();
     } catch (err) {
-      alert("Đã có lỗi xảy ra khi duyệt đơn.");
+      alert(err.response?.data?.message || "Đã có lỗi xảy ra khi duyệt đơn.");
       console.error("Lỗi duyệt đơn:", err);
     }
   };
 
   const handleReject = async (id) => {
     try {
-      await api.put(`/DonNghiPhep/${id}/reject`);
+      await api.post(`/DonNghiPhep/reject/${id}`);
       alert("Đã từ chối đơn.");
       fetchAllRequests();
     } catch (err) {
-      alert("Đã có lỗi xảy ra khi từ chối đơn.");
+      alert(err.response?.data?.message || "Đã có lỗi xảy ra khi từ chối đơn.");
       console.error("Lỗi từ chối đơn:", err);
     }
   };
@@ -79,25 +79,25 @@ const LeaveManagementPage = () => {
             onClick={() => setFilter("Chờ duyệt")}
             className={filter === "Chờ duyệt" ? "active" : ""}
           >
-            Chờ duyệt
-          </button>
+            Chờ duyệt{" "}
+          </button>{" "}
           <button
             onClick={() => setFilter("Đã duyệt")}
             className={filter === "Đã duyệt" ? "active" : ""}
           >
-            Đã duyệt
-          </button>
+            Đã duyệt{" "}
+          </button>{" "}
           <button
             onClick={() => setFilter("Từ chối")}
             className={filter === "Từ chối" ? "active" : ""}
           >
-            Đã từ chối
-          </button>
+            Đã từ chối{" "}
+          </button>{" "}
           <button
             onClick={() => setFilter("Tất cả")}
             className={filter === "Tất cả" ? "active" : ""}
           >
-            Tất cả
+            Tất cả{" "}
           </button>
         </div>
 
@@ -105,12 +105,14 @@ const LeaveManagementPage = () => {
           <table className="requests-table">
             <thead>
               <tr>
-                {/* ***** 1. THÊM TIÊU ĐỀ CỘT MÃ NHÂN VIÊN ***** */}
                 <th>Mã NV</th>
                 <th>Tên Nhân Viên</th>
                 <th>Ngày Gửi</th>
-                <th>Ngày Nghỉ</th>
+                <th>Từ Ngày</th>
+                <th>Đến Ngày</th>
+                <th>Số Ngày</th>
                 <th>Lý Do</th>
+                <th>Tệp</th>
                 <th>Trạng Thái</th>
                 <th>Hành Động</th>
               </tr>
@@ -118,12 +120,26 @@ const LeaveManagementPage = () => {
             <tbody>
               {filteredRequests.map((request) => (
                 <tr key={request.id}>
-                  {/* ***** 2. THÊM Ô DỮ LIỆU MÃ NHÂN VIÊN ***** */}
                   <td>{request.maNhanVien}</td>
                   <td>{request.hoTenNhanVien || "N/A"}</td>
                   <td>{formatDate(request.ngayGuiDon)}</td>
-                  <td>{formatDate(request.ngayNghi)}</td>
+                  <td>{formatDate(request.ngayBatDau)}</td>
+                  <td>{formatDate(request.ngayKetThuc)}</td>
+                  <td>{request.soNgayNghi}</td>
                   <td className="reason-cell">{request.lyDo || "Không có"}</td>
+                  <td>
+                    {request.tepDinhKem ? (
+                      <a
+                        href={`http://localhost:5260${request.tepDinhKem}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Xem tệp
+                      </a>
+                    ) : (
+                      "Không"
+                    )}
+                  </td>
                   <td>
                     <StatusBadge status={request.trangThai} />
                   </td>

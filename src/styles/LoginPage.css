@@ -18,18 +18,29 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  /* Dùng min-height để tránh lỗi tràn nội dung nếu form cao */
+  min-height: 100vh; 
+  /* Thêm padding để trên màn hình nhỏ, form không dính vào cạnh */
+  padding: 1rem; 
 }
 
 .login-box {
   background: rgba(255, 255, 255, 0.95);
-  padding: 40px 35px;
+  /* Giảm padding một chút cho màn hình di động */
+  padding: 30px 25px;
   border-radius: 16px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 400px; /* Đây chính là mấu chốt responsive của bạn */
   text-align: center;
   animation: fadeIn 0.8s ease;
+}
+
+/* Thêm breakpoint (lấy từ app.css) để tăng padding trên màn hình lớn hơn */
+@media (min-width: 36em) {
+  .login-box {
+    padding: 40px 35px; /* Trả lại padding lớn hơn */
+  }
 }
 
 @keyframes fadeIn {
@@ -51,7 +62,8 @@ body {
 
 .input-group input {
   width: 100%;
-  padding: 12px 15px 12px 40px;
+  /* Do đã có box-sizing: border-box từ app.css, nên width 100% là an toàn */
+  padding: 12px 15px; /* Giảm padding trái vì đã xóa icon */
   border-radius: 10px;
   border: 1px solid #ddd;
   font-size: 15px;
@@ -63,15 +75,9 @@ body {
   box-shadow: 0 0 8px rgba(118, 75, 162, 0.3);
 }
 
-.input-group::before {
-  content: attr(data-icon);
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 16px;
-  color: #888;
-}
+/* --- ĐÃ XÓA ---
+   Phần .input-group::before không được sử dụng nên tôi đã xóa.
+*/
 
 .forgot-password-link {
   text-align: right;
@@ -79,14 +85,19 @@ body {
   font-size: 14px;
 }
 
-.forgot-password-link span {
+/* --- SỬA LỖI --- 
+   Thẻ <Link> của React Router render ra thẻ <a>, không phải <span>
+*/
+.forgot-password-link a {
   color: #764ba2;
   cursor: pointer;
   transition: color 0.3s ease;
+  text-decoration: none; /* Thêm để bỏ gạch chân */
 }
 
-.forgot-password-link span:hover {
+.forgot-password-link a:hover {
   color: #ff758c;
+  text-decoration: underline; /* Thêm hiệu ứng gạch chân khi hover */
 }
 
 .btn-submit {
@@ -109,12 +120,15 @@ body {
   transform: scale(1.02);
 }
 
+/* Các class .alert này đã khớp với JSX đã sửa ở trên 
+  Nên giữ nguyên 
+*/
 .alert {
   padding: 12px;
   margin-bottom: 20px;
   border-radius: 8px;
   font-size: 15px;
-  text-align: center;
+  text-align: left; /* Căn lề trái cho dễ đọc lỗi */
 }
 
 .alert-success {
@@ -127,6 +141,7 @@ body {
   background-color: #f8d7da;
 }
 .login-logo {
-    width: 120px;
-    margin-bottom: 20px;
+  width: 120px;
+  margin-bottom: 20px;
+  height: auto; /* Thêm từ app.css cho an toàn */
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { api } from "../api";
 import { FaSearch } from "react-icons/fa";
 import { FiSun, FiMoon, FiLogOut } from "react-icons/fi";
@@ -26,20 +26,36 @@ const EmployeeHomePage = () => {
   // --- STATE MỚI CHO QUÉT QR ---
   const [isScannerOpen, setIsScannerOpen] = useState(false); // 2. State quản lý modal quét
   const [scanResult, setScanResult] = useState(null); // Để lưu thông báo quét
-
+  const [timekeepingSummary, setTimekeepingSummary] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const handleLogout = () => {
+
+  const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     navigate("/login");
-  };
+  }, [navigate]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userRes = await api.get(`/NhanVien/${employeeId}`);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+
+        // Gọi 2 API song song
+        const [userRes, timekeepingRes] = await Promise.all([
+          api.get(`/NhanVien/${employeeId}`),
+          // API này lấy dữ liệu chấm công (bao gồm 'remainingLeaveDays')
+          api.get(`/ChamCong/${employeeId}?year=${year}&month=${month}`),
+        ]);
+
         setUser(userRes.data);
+
+        // Lưu summary (chứa "RemainingLeaveDays") vào state
+        if (timekeepingRes.data.summaries) {
+          setTimekeepingSummary(timekeepingRes.data.summaries[employeeId]);
+        }
       } catch (error) {
         console.error("Lỗi tải dữ liệu layout:", error);
         handleLogout();
@@ -48,7 +64,7 @@ const EmployeeHomePage = () => {
       }
     };
     fetchUserData();
-  }, [employeeId]);
+  }, [employeeId, handleLogout]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -72,13 +88,31 @@ const EmployeeHomePage = () => {
   }).format(currentTime);
 
   const handleSaveLeaveRequest = async (requestData) => {
-    const payload = {
-      ...requestData,
-      maNhanVien: employeeId,
-    };
+    // requestData giờ sẽ chứa: ngayBatDau, ngayKetThuc, lyDo, soNgayNghi, file
+
+    // 1. Tạo FormData để gửi file
+    const formData = new FormData();
+
+    // 2. Append dữ liệu vào FormData
+    // Tên key (vd: "NgayBatDau") phải khớp với DTO (DonNghiPhepCreateDto) ở Backend
+    formData.append("NgayBatDau", requestData.ngayBatDau);
+    formData.append("NgayKetThuc", requestData.ngayKetThuc);
+    formData.append("LyDo", requestData.lyDo);
+    formData.append("SoNgayNghi", requestData.soNgayNghi);
+
+    // 3. Thêm file nếu có
+    if (requestData.file) {
+      formData.append("File", requestData.file);
+    }
 
     try {
-      await api.post("/DonNghiPhep", payload);
+      // 4. Gọi API mới (create-with-file) và gửi FormData
+      await api.post("/DonNghiPhep/create-with-file", formData, {
+        headers: {
+          // Bắt buộc set header này khi dùng FormData
+          "Content-Type": "multipart/form-data",
+        },
+      });
       alert("Gửi đơn xin nghỉ thành công!");
       setIsModalOpen(false);
     } catch (error) {
@@ -208,6 +242,7 @@ const EmployeeHomePage = () => {
         <LeaveRequestModal
           onSave={handleSaveLeaveRequest}
           onCancel={() => setIsModalOpen(false)}
+          remainingLeaveDays={timekeepingSummary?.remainingLeaveDays}
         />
       )}
 
