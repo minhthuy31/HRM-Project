@@ -10,13 +10,13 @@ import {
   FaUsers,
   FaEllipsisV,
   FaUndo,
+  FaBan,
 } from "react-icons/fa";
-import "../styles/DepartmentPage.css";
-import "../styles/EmployeePage.css";
+import "../styles/DepartmentPage.css"; // CSS riêng biệt
 import DepartmentModal from "../components/modals/DepartmentModal";
 import EmployeeListModal from "../components/modals/EmployeeListModal";
 
-// --- Component ContextMenu riêng cho Phòng ban ---
+// --- ContextMenu riêng biệt cho Dept ---
 const DepartmentContextMenu = ({ department, onAction, onClose, x, y }) => {
   useEffect(() => {
     const handleClickOutside = () => onClose();
@@ -25,7 +25,7 @@ const DepartmentContextMenu = ({ department, onAction, onClose, x, y }) => {
   }, [onClose]);
 
   return (
-    <div className="context-menu" style={{ top: y, left: x }}>
+    <div className="dept-context-menu" style={{ top: y, left: x }}>
       <ul>
         <li onClick={() => onAction("viewEmployees", department)}>
           <FaUsers /> Xem nhân viên
@@ -53,6 +53,7 @@ const DepartmentContextMenu = ({ department, onAction, onClose, x, y }) => {
 const DepartmentPage = () => {
   const [phongBans, setPhongBans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTrangThai, setFilterTrangThai] = useState("true");
   const [currentDepartment, setCurrentDepartment] = useState(null);
@@ -64,6 +65,7 @@ const DepartmentPage = () => {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setPermissionDenied(false);
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.append("searchTerm", searchTerm);
@@ -73,7 +75,12 @@ const DepartmentPage = () => {
       const response = await api.get(url);
       setPhongBans(response.data);
     } catch (error) {
-      console.error("Failed to fetch departments", error);
+      if (error.response && error.response.status === 403) {
+        setPermissionDenied(true);
+        setPhongBans([]);
+      } else {
+        console.error("Failed to fetch departments", error);
+      }
     } finally {
       setLoading(false);
     }
@@ -89,8 +96,9 @@ const DepartmentPage = () => {
   const handleToggleMenu = (e, department) => {
     e.preventDefault();
     e.stopPropagation();
+    // Logic tính toán vị trí menu
     const menuWidth = 200;
-    const menuHeight = 170; // Chiều cao ước tính của menu
+    const menuHeight = 170;
     let x = e.clientX;
     let y = e.clientY;
 
@@ -103,8 +111,7 @@ const DepartmentPage = () => {
   };
 
   const handleAction = (actionType, dept) => {
-    setActiveMenu({ id: null, x: 0, y: 0 }); // Đóng menu
-
+    setActiveMenu({ id: null, x: 0, y: 0 });
     switch (actionType) {
       case "viewEmployees":
         handleViewEmployees(dept);
@@ -158,9 +165,11 @@ const DepartmentPage = () => {
         await api.post(`/PhongBan/${dept.maPhongBan}/disable`);
         fetchData();
       } catch (error) {
-        alert(
-          error.response?.data?.message || "Lỗi khi vô hiệu hóa phòng ban."
-        );
+        const message =
+          error.response?.status === 403
+            ? "Bạn không có quyền thực hiện hành động này."
+            : error.response?.data?.message || "Lỗi khi vô hiệu hóa phòng ban.";
+        alert(message);
       }
     }
   };
@@ -175,7 +184,11 @@ const DepartmentPage = () => {
         await api.post(`/PhongBan/${dept.maPhongBan}/activate`);
         fetchData();
       } catch (error) {
-        alert(error.response?.data?.message || "Lỗi khi kích hoạt lại.");
+        const message =
+          error.response?.status === 403
+            ? "Bạn không có quyền thực hiện hành động này."
+            : error.response?.data?.message || "Lỗi khi kích hoạt lại.";
+        alert(message);
       }
     }
   };
@@ -194,19 +207,39 @@ const DepartmentPage = () => {
       setIsEditModalOpen(false);
       fetchData();
     } catch (error) {
-      alert(error.response?.data?.message || "Lưu thất bại!");
+      const message =
+        error.response?.status === 403
+          ? "Bạn không có quyền thêm/sửa phòng ban."
+          : error.response?.data?.message || "Lưu thất bại!";
+      alert(message);
     }
   };
 
+  if (permissionDenied) {
+    return (
+      <DashboardLayout>
+        <div className="dept-page">
+          <div className="dept-permission-denied">
+            <FaBan size={50} color="#d9534f" />
+            <h2>Truy cập bị từ chối</h2>
+            <p>Bạn không có quyền xem danh sách phòng ban.</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <div className="department-page">
-        <div className="page-header">
+      <div className="dept-page">
+        {/* HEADER: Dùng class riêng dept-header */}
+        <div className="dept-header">
           <h1>Quản lý Phòng ban</h1>
-          <div className="header-right-panel">
-            <form onSubmit={handleSearchSubmit}>
-              <div className="search-container">
-                <FaSearch className="search-icon" />
+
+          <div className="dept-header-actions">
+            <form onSubmit={handleSearchSubmit} className="dept-search-form">
+              <div className="dept-search-wrapper">
+                <FaSearch className="dept-search-icon" />
                 <input
                   type="text"
                   placeholder="Tìm theo tên, mã..."
@@ -216,7 +249,7 @@ const DepartmentPage = () => {
               </div>
             </form>
 
-            <div className="filter-container">
+            <div className="dept-filter-wrapper">
               <select
                 value={filterTrangThai}
                 onChange={(e) => setFilterTrangThai(e.target.value)}
@@ -227,7 +260,7 @@ const DepartmentPage = () => {
               </select>
             </div>
 
-            <button onClick={handleAdd} className="add-btn">
+            <button onClick={handleAdd} className="dept-add-btn">
               <FaPlus /> Thêm mới
             </button>
           </div>
@@ -236,8 +269,8 @@ const DepartmentPage = () => {
         {loading ? (
           <p>Đang tải...</p>
         ) : (
-          <div className="table-container">
-            <table className="department-table">
+          <div className="dept-table-wrapper">
+            <table className="dept-table">
               <thead>
                 <tr>
                   <th>Mã phòng ban</th>
@@ -249,30 +282,46 @@ const DepartmentPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {phongBans.map((dept) => (
-                  <tr key={dept.maPhongBan}>
-                    <td>{dept.maPhongBan}</td>
-                    <td
-                      className="employee-name-cell"
-                      onContextMenu={(e) => handleToggleMenu(e, dept)}
-                    >
-                      {dept.tenPhongBan}
-                    </td>
-                    <td>{dept.diaChi}</td>
-                    <td>{dept.sdt_PhongBan}</td>
-                    <td style={{ color: dept.trangThai ? "green" : "red" }}>
-                      {dept.trangThai ? "Hoạt động" : "Vô hiệu hóa"}
-                    </td>
-                    <td className="actions-cell">
-                      <button
-                        className="action-btn"
-                        onClick={(e) => handleToggleMenu(e, dept)}
+                {phongBans.length > 0 ? (
+                  phongBans.map((dept) => (
+                    <tr key={dept.maPhongBan}>
+                      <td>{dept.maPhongBan}</td>
+                      <td
+                        className="dept-name-cell"
+                        onContextMenu={(e) => handleToggleMenu(e, dept)}
                       >
-                        <FaEllipsisV />
-                      </button>
+                        {dept.tenPhongBan}
+                      </td>
+                      <td>{dept.diaChi}</td>
+                      <td>{dept.sdt_PhongBan}</td>
+
+                      <td
+                        style={{
+                          color: dept.trangThai ? "green" : "red",
+                        }}
+                      >
+                        {dept.trangThai ? "Hoạt động" : "Vô hiệu hóa"}
+                      </td>
+                      <td className="dept-actions-cell">
+                        <button
+                          className="dept-action-btn"
+                          onClick={(e) => handleToggleMenu(e, dept)}
+                        >
+                          <FaEllipsisV />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      style={{ textAlign: "center", padding: "20px" }}
+                    >
+                      Không có dữ liệu
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

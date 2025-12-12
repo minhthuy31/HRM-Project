@@ -1,0 +1,217 @@
+.my-payslip-view {
+  background-color: var(--card-bg, #ffffff);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: var(--main-text);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Thanh điều hướng tháng */
+.month-navigator-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--sidebar-border, #eee);
+}
+.month-navigator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.month-navigator button {
+  background: #f0f2f5;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.month-navigator button:hover {
+  background-color: #e4e6eb;
+}
+.month-navigator h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+  width: 180px;
+  text-align: center;
+}
+.print-btn {
+  background-color: var(--hover-text, #0d6efd);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.print-btn:hover { opacity: 0.9; }
+
+/* Nội dung lương */
+.payslip-content {
+  border: 1px solid var(--sidebar-border, #eee);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.payslip-header {
+  padding: 1.5rem;
+  background-color: var(--hover-bg, #f9fafb);
+  text-align: center;
+  border-bottom: 1px solid var(--sidebar-border, #eee);
+  position: relative;
+}
+.payslip-header h3 {
+  margin: 0;
+  color: var(--logo-text-color, #1975b1);
+}
+
+/* Trạng thái */
+.payslip-status-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.payslip-status-badge.provisional {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+.payslip-status-badge.finalized {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #a7f3d0;
+}
+
+/* Thông tin nhân viên */
+.payslip-info {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  border-bottom: 1px solid var(--sidebar-border, #eee);
+}
+.payslip-info p { margin: 0; font-size: 0.9rem; }
+.payslip-info p strong { color: var(--toggle-icon-color, #555); }
+
+/* Bảng tóm tắt lương (Đơn giản) */
+.payslip-simple-summary {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--hover-bg, #f9fafb);
+  border-bottom: 1px solid var(--sidebar-border, #eee);
+}
+.payslip-simple-summary .summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.payslip-simple-summary .summary-item span {
+  font-size: 0.9rem;
+  color: var(--toggle-icon-color, #555);
+}
+.payslip-simple-summary .summary-item .value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--main-text);
+}
+.payslip-simple-summary .summary-item.total .value {
+  color: var(--hover-text, #0d6efd);
+  font-size: 1.75rem;
+  font-weight: bold;
+}
+
+/* Chi tiết chấm công */
+.payslip-details-list {
+  padding: 1.5rem;
+}
+.payslip-details-list h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.details-table th, .details-table td {
+  border: 1px solid var(--sidebar-border, #eee);
+  padding: 10px;
+  text-align: left;
+}
+.details-table th {
+  background-color: var(--hover-bg, #f9fafb);
+  font-size: 0.9rem;
+}
+.details-table td {
+  font-size: 0.9rem;
+}
+
+.details-table .record-note {
+  color: var(--toggle-icon-color, #555);
+  font-style: italic;
+}
+
+/* Tô màu ngày công */
+.day-record-1 { /* Đi làm (1.0) */
+  background-color: #f0fdf4; 
+  color: #15803d;
+}
+.day-record-0\.5 { /* Nửa ngày (0.5) */
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+.day-record-0 { /* Nghỉ (0.0) */
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+
+/* Thông báo lỗi/tải */
+.loading-text, .error-text, .no-data-text {
+  padding: 3rem;
+  text-align: center;
+  color: var(--toggle-icon-color, #666);
+  font-size: 1rem;
+}
+.error-text {
+  color: #dc2626;
+}
+
+/* CSS cho bản in */
+@media print {
+  body * { visibility: hidden; }
+  .my-payslip-view, .my-payslip-view * { visibility: visible; }
+  .my-payslip-view {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    box-shadow: none;
+    background-color: #fff;
+    color: #000;
+  }
+  .month-navigator-bar { display: none; }
+  .payslip-content { border: none; }
+  .payslip-simple-summary { background-color: #f9fafb; }
+  .details-table th { background-color: #f9fafb; }
+}

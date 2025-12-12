@@ -22,19 +22,32 @@ const LoginPage = () => {
 
       localStorage.setItem("token", token);
 
-      const normalizedRole = role?.toLowerCase();
+      const normalizeRole = (r) => {
+        if (!r) return "";
+        return r
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+          .replace(/đ/g, "d");
+      };
 
-      if (
-        normalizedRole === "giám đốc" ||
-        normalizedRole === "trưởng phòng" ||
-        normalizedRole === "nhân sự phòng" ||
-        normalizedRole === "nhân sự tổng"
-      ) {
-        navigate("/dashboard");
-      } else if (normalizedRole === "nhân viên") {
+      const roleMap = {
+        nhanvien: "/employee-home",
+        giamdoc: "/dashboard",
+        truongphong: "/dashboard",
+        ketoantruong: "/dashboard",
+        tonggiamdoc: "/dashboard",
+      };
+
+      const cleanRole = normalizeRole(role);
+
+      if (cleanRole === "nhanvien") {
         navigate(`/employee-home/${maNhanVien}`);
+      } else if (roleMap[cleanRole]) {
+        navigate("/dashboard");
       } else {
-        setError(`Vai trò người dùng không hợp lệ: '${role}'`);
+        setError("Role không được hỗ trợ: " + role);
         localStorage.removeItem("token");
       }
     } catch (err) {

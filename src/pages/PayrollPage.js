@@ -19,7 +19,7 @@ const PayrollPage = () => {
       const month = date.getMonth() + 1;
 
       const [empRes, attendanceRes, savedPayrollRes] = await Promise.all([
-        api.get("/NhanVien"),
+        api.get("/NhanVien?TrangThai=true"),
         api.get(`/ChamCong?year=${year}&month=${month}`),
         api.get(`/BangLuong?year=${year}&month=${month}`),
       ]);

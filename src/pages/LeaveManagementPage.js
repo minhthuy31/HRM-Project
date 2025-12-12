@@ -102,69 +102,84 @@ const LeaveManagementPage = () => {
         </div>
 
         {!loading && (
-          <table className="requests-table">
-            <thead>
-              <tr>
-                <th>Mã NV</th>
-                <th>Tên Nhân Viên</th>
-                <th>Ngày Gửi</th>
-                <th>Từ Ngày</th>
-                <th>Đến Ngày</th>
-                <th>Số Ngày</th>
-                <th>Lý Do</th>
-                <th>Tệp</th>
-                <th>Trạng Thái</th>
-                <th>Hành Động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.map((request) => (
-                <tr key={request.id}>
-                  <td>{request.maNhanVien}</td>
-                  <td>{request.hoTenNhanVien || "N/A"}</td>
-                  <td>{formatDate(request.ngayGuiDon)}</td>
-                  <td>{formatDate(request.ngayBatDau)}</td>
-                  <td>{formatDate(request.ngayKetThuc)}</td>
-                  <td>{request.soNgayNghi}</td>
-                  <td className="reason-cell">{request.lyDo || "Không có"}</td>
-                  <td>
-                    {request.tepDinhKem ? (
-                      <a
-                        href={`http://localhost:5260${request.tepDinhKem}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Xem tệp
-                      </a>
-                    ) : (
-                      "Không"
-                    )}
-                  </td>
-                  <td>
-                    <StatusBadge status={request.trangThai} />
-                  </td>
-                  <td>
-                    {request.trangThai === "Chờ duyệt" && (
-                      <div className="action-buttons">
-                        <button
-                          className="approve-btn"
-                          onClick={() => handleApprove(request)}
-                        >
-                          Duyệt
-                        </button>
-                        <button
-                          className="reject-btn"
-                          onClick={() => handleReject(request.id)}
-                        >
-                          Từ chối
-                        </button>
-                      </div>
-                    )}
-                  </td>
+          <div className="requests-table-container">
+            <table className="requests-table">
+              <thead>
+                <tr>
+                  <th>Mã NV</th>
+                  <th>Tên Nhân Viên</th>
+                  <th>Phép còn</th>
+                  <th>Ngày Gửi</th>
+                  <th>Từ Ngày</th>
+                  <th>Đến Ngày</th>
+                  <th>Số Ngày</th>
+                  <th>Lý Do</th>
+                  <th>Tệp</th>
+                  <th>Trạng Thái</th>
+                  <th>Hành Động</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td>{request.maNhanVien}</td>
+                    <td>{request.hoTenNhanVien || "N/A"}</td>
+                    <td
+                      style={{
+                        fontWeight: "bold",
+                        color: request.remainingLeaveDays > 0 ? "green" : "red",
+                      }}
+                    >
+                      {request.remainingLeaveDays !== undefined
+                        ? request.remainingLeaveDays
+                        : "N/A"}
+                    </td>
+                    <td>{formatDate(request.ngayGuiDon)}</td>
+                    <td>{formatDate(request.ngayBatDau)}</td>
+                    <td>{formatDate(request.ngayKetThuc)}</td>
+                    <td>{request.soNgayNghi}</td>
+                    <td className="reason-cell">
+                      {request.lyDo || "Không có"}
+                    </td>
+                    <td>
+                      {request.tepDinhKem ? (
+                        <a
+                          href={`http://localhost:5260${request.tepDinhKem}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Xem tệp
+                        </a>
+                      ) : (
+                        "Không"
+                      )}
+                    </td>
+                    <td>
+                      <StatusBadge status={request.trangThai} />
+                    </td>
+                    <td>
+                      {request.trangThai === "Chờ duyệt" && (
+                        <div className="action-buttons">
+                          <button
+                            className="approve-btn"
+                            onClick={() => handleApprove(request)}
+                          >
+                            Duyệt
+                          </button>
+                          <button
+                            className="reject-btn"
+                            onClick={() => handleReject(request.id)}
+                          >
+                            Từ chối
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </DashboardLayout>

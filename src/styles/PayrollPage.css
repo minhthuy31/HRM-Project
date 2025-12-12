@@ -1,6 +1,14 @@
 .payroll-page-container {
-    padding: 20px;
-    background-color: #f9f9f9;
+    background-color: var(--card-bg, #ffffff) !important;
+    padding: 24px;
+    border-radius: 12px;           /* bo góc lớn hơn một chút cho sang */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    margin: 0;                     /* bỏ khoảng cách thừa */
 }
 
 .payroll-header {
@@ -34,13 +42,13 @@
 }
 
 .save-payroll-btn {
-padding: 10px 20px;
-background-color: #28a745; /* Màu xanh lá */
-color: white;
-border: none;
-border-radius: 5px;
-cursor: pointer;
-font-weight: bold;
+    padding: 10px 20px;
+    background-color: #28a745; /* Màu xanh lá */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -53,12 +61,12 @@ font-weight: bold;
 /* THÊM MỚI: Nút Xuất Excel */
 .export-excel-btn {
     padding: 10px 20px;
-background-color: #007bff; /* Màu xanh dương */
-color: white;
-border: none;
-border-radius: 5px;
-cursor: pointer;
-font-weight: bold;
+    background-color: #007bff; /* Màu xanh dương */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -72,10 +80,18 @@ font-weight: bold;
 }
 
 .payroll-table-container {
-    overflow-x: auto;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex: 1;                      /* Chiếm hết chỗ còn lại */
+    min-height: 0;                /* Bắt buộc để scroll hoạt động */
+    overflow: auto !important;    /* Scroll dọc + ngang */
+    -webkit-overflow-scrolling: touch;
+}
+
+.payroll-table thead th {
+    position: sticky;
+    top: 0;                    /* ← QUAN TRỌNG NHẤT: cố định ở trên cùng */
+    background-color: #f7f7f7; /* giữ màu nền khi scroll */
+    z-index: 10;               /* đảm bảo nằm trên các dòng bên dưới */
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); /* thêm viền dưới nhẹ cho đẹp */
 }
 
 .payroll-table {
@@ -122,4 +138,149 @@ font-weight: bold;
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* ================== QUẢN LÝ ĐƠN TỪ – ĐẸP + SCROLL HOÀN HẢO NHƯ TRANG TÍNH LƯƠNG ================== */
+
+.leave-management-container {
+    background-color: var(--card-bg, #ffffff);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.leave-management-container h1 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+/* Nút lọc */
+.filter-buttons {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-buttons button {
+    padding: 8px 16px;
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.filter-buttons button.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Vùng chứa bảng – QUAN TRỌNG NHẤT */
+.requests-table-container {
+    flex: 1;                      /* Chiếm hết không gian còn lại */
+    min-height: 0;                /* BẮT BUỘC để scroll hoạt động */
+    overflow: auto;               /* Scroll dọc + ngang */
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Bảng */
+.requests-table {
+    width: 100%;
+    min-width: 1200px;            /* Đảm bảo có scroll ngang khi thu nhỏ */
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.requests-table th,
+.requests-table td {
+    border: 1px solid #dee2e6;
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.requests-table thead {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.requests-table th {
+    font-weight: 600;
+    background-color: #f1f3f5;
+}
+
+.requests-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.requests-table tbody tr:hover {
+    background-color: #e3f2fd !important;
+}
+
+/* Cột lý do dài */
+.reason-cell {
+    max-width: 280px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Nút hành động */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-buttons button {
+    border: none;
+    padding: 7px 12px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.action-buttons button:hover {
+    opacity: 0.85;
+}
+
+.approve-btn { background-color: #28a745; }
+.reject-btn  { background-color: #dc3545; }
+
+/* Badge trạng thái */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge.pending { background-color: #ffc107; color: #333; }
+.status-badge.approved { background-color: #28a745; color: white; }
+.status-badge.rejected { background-color: #dc3545; color: white; }
+
+
+/* Lỗi */
+.error-message {
+    color: #dc3545;
+    margin: 1rem 0;
+}
+.payroll-table tbody tr:hover {
+    background-color: #f0f8ff !important;   /* Xanh rất nhạt, cực nhẹ nhàng */
 }

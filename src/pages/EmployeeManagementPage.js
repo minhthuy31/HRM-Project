@@ -12,6 +12,7 @@ import {
   FaSearch,
   FaEllipsisV,
   FaDownload,
+  FaUpload,
 } from "react-icons/fa";
 import "../styles/EmployeePage.css";
 import EmployeeModal from "../components/modals/EmployeeModal";
@@ -65,6 +66,7 @@ const EmployeePage = () => {
   const [chuyenNganhs, setChuyenNganhs] = useState([]);
   const [trinhDoHocVans, setTrinhDoHocVans] = useState([]);
   const [hopDongs, setHopDongs] = useState([]);
+  const [managers, setManagers] = useState([]); // State mới cho danh sách quản lý
   const [loading, setLoading] = useState(true);
   // const navigate = useNavigate();
   // const currentUser = getUserFromToken();
@@ -81,7 +83,7 @@ const EmployeePage = () => {
     selectedPhongBan: "",
     searchTerm: "",
     selectedChucVu: "",
-    selectedTrangThai: "",
+    selectedTrangThai: "true",
     selectedTrinhDo: "",
   });
 
@@ -100,14 +102,17 @@ const EmployeePage = () => {
       if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
       const employeeUrl = `/NhanVien?${params.toString()}`;
 
-      const [empRes, pbRes, cvRes, cnRes, tdRes, hdRes] = await Promise.all([
-        api.get(employeeUrl),
-        api.get("/PhongBan"),
-        api.get("/ChucVuNhanVien"),
-        api.get("/ChuyenNganh"),
-        api.get("/TrinhDoHocVan"),
-        api.get("/HopDong"),
-      ]);
+      // Gọi thêm API lấy danh sách quản lý (/NhanVien/managers)
+      const [empRes, pbRes, cvRes, cnRes, tdRes, hdRes, mgrRes] =
+        await Promise.all([
+          api.get(employeeUrl),
+          api.get("/PhongBan"),
+          api.get("/ChucVuNhanVien"),
+          api.get("/ChuyenNganh"),
+          api.get("/TrinhDoHocVan"),
+          api.get("/HopDong"),
+          api.get("/NhanVien/managers"),
+        ]);
 
       setEmployees(empRes.data);
       setPhongBans(pbRes.data);
@@ -115,6 +120,7 @@ const EmployeePage = () => {
       setChuyenNganhs(cnRes.data);
       setTrinhDoHocVans(tdRes.data);
       setHopDongs(hdRes.data);
+      setManagers(mgrRes.data); // Set dữ liệu quản lý
     } catch (error) {
       console.error("Failed to fetch data", error);
     } finally {
@@ -133,19 +139,7 @@ const EmployeePage = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // useEffect(() => {
-  //   if (currentUser) {
-  //     //check role
-  //     if (currentUser.role === "Nhân viên") {
-  //       //gọi đến api
-  //       navigate(`/nhan-vien/${currentUser.maNhanVien}`);
-  //     }
-  //   } else {
-  //     navigate("/login");
-  //   }
-  // }, [currentUser, navigate]);
-
-  //hàm chung xử lý lọc
+  //hàm chung xử lý lọc
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prevFilters) => ({
@@ -259,89 +253,315 @@ const EmployeePage = () => {
       alert(errorMsg);
     }
   };
-  // // check role nhân viên để hiện
-  // if (currentUser && currentUser.role === "Nhân viên") {
-  //   return (
-  //     <DashboardLayout>
-  //       <p>Đang tải hồ sơ của bạn...</p>
-  //     </DashboardLayout>
-  //   );
-  // }
+
   const handleExportExcel = () => {
     if (employees.length === 0) {
       alert("Không có dữ liệu nhân viên để xuất.");
       return;
     }
+    const formatDate = (dateString) => {
+      if (!dateString) return "";
+      return new Date(dateString).toLocaleDateString("vi-VN");
+    };
+
+    // Cập nhật Export Excel với các trường mới
     const dataToExport = employees.map((emp) => {
       return {
         "Mã NV": emp.maNhanVien,
         "Họ Tên": emp.hoTen,
         Email: emp.email,
+        SĐT: emp.sdt_NhanVien,
+        "Giới Tính": emp.gioiTinh === 1 ? "Nam" : "Nữ",
+        "Ngày Sinh": formatDate(emp.ngaySinh),
+        "Dân Tộc": emp.danToc,
+        "Tôn Giáo": emp.tonGiao,
+        "Quốc Tịch": emp.quocTich,
+        "Nơi Sinh": emp.noiSinh,
+        "Tình Trạng Hôn Nhân": emp.tinhTrangHonNhan,
+        "Quê Quán": emp.queQuan,
+
+        "Địa Chỉ Thường Trú": emp.diaChiThuongTru,
+        "Phường/Xã TT": emp.phuongXaThuongTru,
+        "Quận/Huyện TT": emp.quanHuyenThuongTru,
+        "Tỉnh/Thành TT": emp.tinhThanhThuongTru,
+        "Quốc Gia TT": emp.quocGiaThuongTru,
+        "Địa Chỉ Tạm Trú": emp.diaChiTamTru,
+
+        CCCD: emp.cccd,
+        "Ngày Cấp CCCD": formatDate(emp.ngayCapCCCD),
+        "Nơi Cấp CCCD": emp.noiCapCCCD,
+        "Ngày Hết Hạn CCCD": formatDate(emp.ngayHetHanCCCD),
+
+        "Số Hộ Chiếu": emp.soHoChieu,
+        "Ngày Cấp HC": formatDate(emp.ngayCapHoChieu),
+        "Nơi Cấp HC": emp.noiCapHoChieu,
+        "Ngày Hết Hạn HC": formatDate(emp.ngayHetHanHoChieu),
+
+        "Loại Nhân Viên": emp.loaiNhanVien,
+        "Trạng Thái": emp.trangThai ? "Hoạt động" : "Đã nghỉ",
         "Phòng Ban": emp.tenPhongBan,
         "Chức Vụ": emp.tenChucVu,
-        "Trạng Thái": emp.trangThai ? "Hoạt động" : "Đã nghỉ",
-        SĐT: emp.sdt_NhanVien,
-        CCCD: emp.cccd,
-        "Ngày Sinh": emp.ngaySinh
-          ? new Date(emp.ngaySinh).toLocaleDateString("vi-VN")
-          : "",
+        "Quản Lý Trực Tiếp": emp.tenQuanLyTrucTiep, // Trường mới
+        "Ngày Vào Làm": formatDate(emp.ngayVaoLam),
+        "Ngày Nghỉ Việc": formatDate(emp.ngayNghiViec),
+
         "Trình Độ": emp.tenTrinhDoHocVan,
         "Chuyên Ngành": emp.tenChuyenNganh,
+        "Nơi Đào Tạo": emp.noiDaoTao,
+        "Hệ Đào Tạo": emp.heDaoTao,
+
+        "Số Tài Khoản NH": emp.soTaiKhoanNH,
+        "Tên Ngân Hàng": emp.tenNganHang,
+        "Tên Tài Khoản NH": emp.tenTaiKhoanNH,
+
+        "Số BHYT": emp.soBHYT,
+        "Số BHXH": emp.soBHXH,
+        "Nơi ĐK KCB": emp.noiDKKCB,
+
+        "Người Liên Hệ KC": emp.nguoiLienHeKhanCap,
+        "SĐT KC": emp.sdtKhanCap,
+        "Quan Hệ KC": emp.quanHeKhanCap,
+        "Địa Chỉ KC": emp.diaChiKhanCap,
       };
     });
 
-    // 2. Tạo một worksheet (trang tính) từ mảng JSON
     const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const cols = [
-      { wch: 10 }, // Mã NV
-      { wch: 25 }, // Họ Tên
-      { wch: 30 }, // Email
-      { wch: 20 }, // Phòng Ban
-      { wch: 20 }, // Chức Vụ
-      { wch: 15 }, // Trạng Thái
-      { wch: 15 }, // SĐT
-      { wch: 15 }, // CCCD
-      { wch: 15 }, // Ngày Sinh
-      { wch: 20 }, // Trình Độ
-      { wch: 20 }, // Chuyên Ngành
-    ];
+    // Điều chỉnh độ rộng cột (ước lượng)
+    const cols = Object.keys(dataToExport[0]).map(() => ({ wch: 20 }));
     ws["!cols"] = cols;
-    // 3. Tạo một workbook (file Excel) mới
-    const wb = XLSX.utils.book_new();
 
-    // 4. Thêm worksheet vào workbook
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "DanhSachNhanVien");
-    // 5. Tạo file và kích hoạt tải về
     const fileName = `DanhSachNhanVien_${
       new Date().toISOString().split("T")[0]
     }.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
+  const findIdByName = (list, name, nameField, idField) => {
+    if (!name) return null;
+    const item = list.find(
+      (i) => i[nameField]?.toLowerCase() === name.toLowerCase()
+    );
+    return item ? item[idField] : null;
+  };
+
+  // Hàm hỗ trợ chuyển đổi ngày tháng từ Excel
+  const excelDateToJSDate = (serial) => {
+    if (typeof serial === "number") {
+      const utc_days = Math.floor(serial - 25569);
+      const utc_value = utc_days * 86400;
+      const date_info = new Date(utc_value * 1000);
+      return new Date(
+        date_info.getFullYear(),
+        date_info.getMonth(),
+        date_info.getDate() + 1
+      );
+    } else if (typeof serial === "string") {
+      const parts = serial.split("/");
+      if (parts.length === 3) {
+        return new Date(parts[2], parts[1] - 1, parts[0]);
+      }
+    }
+    return null;
+  };
+
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        setLoading(true);
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+
+        const employeesToImport = json.map((row) => {
+          // Map các khoá ngoại cơ bản
+          const maPB = findIdByName(
+            phongBans,
+            row["Phòng Ban"],
+            "tenPhongBan",
+            "maPhongBan"
+          );
+          const maCV = findIdByName(
+            chucVus,
+            row["Chức Vụ"],
+            "tenChucVu",
+            "maChucVuNV"
+          );
+          const maTD = findIdByName(
+            trinhDoHocVans,
+            row["Trình Độ"],
+            "tenTrinhDo",
+            "maTrinhDoHocVan"
+          );
+          const maCN = findIdByName(
+            chuyenNganhs,
+            row["Chuyên Ngành"],
+            "tenChuyenNganh",
+            "maChuyenNganh"
+          );
+
+          return {
+            hoTen: row["Họ Tên"],
+            email: row["Email"],
+            sdt_NhanVien: row["SĐT"],
+            gioiTinh: row["Giới Tính"] === "Nam" ? 1 : 0,
+            ngaySinh: excelDateToJSDate(row["Ngày Sinh"]),
+            danToc: row["Dân Tộc"],
+            tonGiao: row["Tôn Giáo"],
+            quocTich: row["Quốc Tịch"],
+            noiSinh: row["Nơi Sinh"],
+            tinhTrangHonNhan: row["Tình Trạng Hôn Nhân"],
+            queQuan: row["Quê Quán"],
+
+            diaChiThuongTru: row["Địa Chỉ Thường Trú"],
+            phuongXaThuongTru: row["Phường/Xã TT"],
+            quanHuyenThuongTru: row["Quận/Huyện TT"],
+            tinhThanhThuongTru: row["Tỉnh/Thành TT"],
+            quocGiaThuongTru: row["Quốc Gia TT"],
+            diaChiTamTru: row["Địa Chỉ Tạm Trú"],
+
+            cccd: row["CCCD"],
+            ngayCapCCCD: excelDateToJSDate(row["Ngày Cấp CCCD"]),
+            noiCapCCCD: row["Nơi Cấp CCCD"],
+            ngayHetHanCCCD: excelDateToJSDate(row["Ngày Hết Hạn CCCD"]),
+
+            soHoChieu: row["Số Hộ Chiếu"],
+            ngayCapHoChieu: excelDateToJSDate(row["Ngày Cấp HC"]),
+            noiCapHoChieu: row["Nơi Cấp HC"],
+            ngayHetHanHoChieu: excelDateToJSDate(row["Ngày Hết Hạn HC"]),
+
+            loaiNhanVien: row["Loại Nhân Viên"],
+            maPhongBan: maPB,
+            maChucVuNV: maCV,
+            maTrinhDoHocVan: maTD,
+            maChuyenNganh: maCN,
+
+            soTaiKhoanNH: row["Số Tài Khoản NH"],
+            tenNganHang: row["Tên Ngân Hàng"],
+            tenTaiKhoanNH: row["Tên Tài Khoản NH"],
+
+            soBHYT: row["Số BHYT"],
+            soBHXH: row["Số BHXH"],
+            noiDKKCB: row["Nơi ĐK KCB"],
+
+            nguoiLienHeKhanCap: row["Người Liên Hệ KC"],
+            sdtKhanCap: row["SĐT KC"],
+            quanHeKhanCap: row["Quan Hệ KC"],
+            diaChiKhanCap: row["Địa Chỉ KC"],
+
+            trangThai: row["Trạng Thái"]
+              ? row["Trạng Thái"].toLowerCase() === "hoạt động"
+              : true,
+            matKhau: "123456",
+          };
+        });
+
+        const validEmployees = employeesToImport.filter(
+          (emp) => emp.maPhongBan && emp.maChucVuNV && emp.hoTen
+        );
+        const invalidCount = employeesToImport.length - validEmployees.length;
+
+        if (invalidCount > 0) {
+          alert(
+            `Cảnh báo: ${invalidCount} nhân viên không thể nhập do thiếu/sai tên Phòng Ban, Chức Vụ hoặc Họ Tên. Chỉ nhập ${validEmployees.length} nhân viên hợp lệ.`
+          );
+        }
+
+        if (validEmployees.length === 0) {
+          alert("Không có nhân viên nào hợp lệ để nhập.");
+          setLoading(false);
+          return;
+        }
+
+        const response = await api.post("/NhanVien/import", validEmployees);
+        alert(response.data.message);
+        fetchData();
+      } catch (err) {
+        console.error("Lỗi khi nhập Excel:", err);
+        alert(
+          "Đã xảy ra lỗi khi đọc hoặc gửi file. " +
+            (err.response?.data?.message || "")
+        );
+      } finally {
+        setLoading(false);
+        e.target.value = null;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
     <DashboardLayout>
       <div className="employee-page">
+        {/* --- PAGE HEADER MỚI --- */}
         <div className="page-header">
-          <h1>Quản lý nhân viên</h1>
-          <div className="header-right-panel">
-            <form onSubmit={handleSearchSubmit}>
-              <div className="search-container">
-                <FaSearch className="search-icon" />
+          {/* HÀNG 1: Tiêu đề + Search + Action Buttons */}
+          <div className="header-top-row">
+            <h1>Quản lý nhân viên</h1>
+
+            <div className="header-actions">
+              <form onSubmit={handleSearchSubmit} className="search-form">
+                <div className="search-container">
+                  <FaSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm..."
+                    value={filters.searchTerm}
+                    onChange={handleSearchChange}
+                  />
+                </div>
+              </form>
+
+              <div className="action-buttons-group">
+                <button
+                  onClick={() =>
+                    document.getElementById("import-excel-input").click()
+                  }
+                  className="add-btn btn-import"
+                >
+                  <FaUpload /> Nhập
+                </button>
                 <input
-                  type="text"
-                  placeholder="Tìm kiếm..."
-                  value={filters.searchTerm}
-                  onChange={handleSearchChange}
+                  type="file"
+                  id="import-excel-input"
+                  style={{ display: "none" }}
+                  accept=".xlsx, .xls"
+                  onChange={handleImportExcel}
                 />
+
+                <button
+                  onClick={handleExportExcel}
+                  className="add-btn btn-export"
+                >
+                  <FaDownload /> Xuất
+                </button>
+
+                <button
+                  onClick={() => setModal({ type: "edit", data: null })}
+                  className="add-btn btn-add"
+                >
+                  <FaPlus /> Thêm mới
+                </button>
               </div>
-            </form>
-            <div className="filter-container">
+            </div>
+          </div>
+
+          {/* HÀNG 2: Filters */}
+          <div className="header-bottom-row">
+            <div className="filter-item">
               <select
                 name="selectedPhongBan"
                 value={filters.selectedPhongBan}
                 onChange={handleFilterChange}
               >
-                <option value="">Tất cả phòng ban</option>
+                <option value="">-- Tất cả phòng ban --</option>
                 {phongBans.map((pb) => (
                   <option key={pb.maPhongBan} value={pb.maPhongBan}>
                     {pb.tenPhongBan}
@@ -350,14 +570,13 @@ const EmployeePage = () => {
               </select>
             </div>
 
-            {/* Lọc theo chức vụ */}
-            <div className="filter-container">
+            <div className="filter-item">
               <select
                 name="selectedChucVu"
                 value={filters.selectedChucVu}
                 onChange={handleFilterChange}
               >
-                <option value="">Tất cả chức vụ</option>
+                <option value="">-- Tất cả chức vụ --</option>
                 {chucVus.map((cv) => (
                   <option key={cv.maChucVuNV} value={cv.maChucVuNV}>
                     {cv.tenChucVu}
@@ -366,8 +585,7 @@ const EmployeePage = () => {
               </select>
             </div>
 
-            {/* Lọc theo trạng thái */}
-            <div className="filter-container">
+            <div className="filter-item">
               <select
                 name="selectedTrangThai"
                 value={filters.selectedTrangThai}
@@ -379,14 +597,13 @@ const EmployeePage = () => {
               </select>
             </div>
 
-            {/* Lọc theo trình độ học vấn */}
-            <div className="filter-container">
+            <div className="filter-item">
               <select
                 name="selectedTrinhDo"
                 value={filters.selectedTrinhDo}
                 onChange={handleFilterChange}
               >
-                <option value="">Tất cả trình độ</option>
+                <option value="">-- Tất cả trình độ --</option>
                 {trinhDoHocVans.map((td) => (
                   <option key={td.maTrinhDoHocVan} value={td.maTrinhDoHocVan}>
                     {td.tenTrinhDo}
@@ -394,21 +611,9 @@ const EmployeePage = () => {
                 ))}
               </select>
             </div>
-            <button
-              onClick={handleExportExcel}
-              className="add-btn"
-              style={{ marginRight: "10px", backgroundColor: "#1D6F42" }} // Màu xanh lá
-            >
-              <FaDownload /> Xuất Excel
-            </button>
-            <button
-              onClick={() => setModal({ type: "edit", data: null })}
-              className="add-btn"
-            >
-              <FaPlus /> Thêm mới
-            </button>
           </div>
         </div>
+
         <div className="table-container">
           {loading ? (
             <p>Đang tải...</p>
@@ -492,6 +697,7 @@ const EmployeePage = () => {
           chuyenNganhs={chuyenNganhs}
           trinhDoHocVans={trinhDoHocVans}
           hopDongs={hopDongs}
+          managers={managers} // Truyền danh sách quản lý vào modal
         />
       )}
     </DashboardLayout>

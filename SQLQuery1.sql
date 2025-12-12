@@ -330,3 +330,10 @@ select *from PhongBans
 UPDATE PhongBans
 SET TrangThai = 1
 WHERE TrangThai IS NULL OR TrangThai = 0;
+DELETE FROM BangLuongs;
+
+
+
+
+
+

@@ -188,15 +188,17 @@ const EmployeeHomePage = () => {
             </div>
             <div className="action-buttons">
               <button
-                className="action-btn"
+                className="sidebar-action-btn"
                 onClick={() => setIsModalOpen(true)}
               >
                 Đăng ký nghỉ
               </button>
-              <button className="action-btn">Đăng ký OT / Công tác</button>
+              <button className="sidebar-action-btn">
+                Đăng ký OT / Công tác
+              </button>
               {/* 5. THÊM NÚT QUÉT QR VÀO ĐÂY */}
               <button
-                className="action-btn action-btn-checkin" // Dùng class mới để tô màu
+                className="sidebar-action-btn sidebar-action-btn-checkin"
                 onClick={() => {
                   setScanResult(null); // Xóa lỗi cũ (nếu có)
                   setIsScannerOpen(true);

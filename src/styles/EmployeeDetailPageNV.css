@@ -1,71 +1,146 @@
-.employee-self-view {
-  background-color: var(--card-bg-color);
-  border-radius: var(--card-border-radius);
-  box-shadow: var(--card-shadow);
-  padding: var(--content-padding);
+/* EmployeeDetailPageNV.css – ĐẸP, TRẮNG SẠCH, KHÔNG NHẢY CÓC, KHÔNG BỊ GHI ĐÈ */
+
+.employee-self-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.employee-self-view .detail-header {
+/* Header */
+.self-header {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding-bottom: 1.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--primary-bg-color);
+  gap: 2rem;
+  padding: 2rem 2rem 1.5rem;
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.employee-self-view .detail-avatar {
-  width: 90px;
-  height: 90px;
+.self-avatar {
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
 }
 
-.employee-self-view h1 {
-  font-size: 1.8rem;
+.self-avatar-placeholder {
+  color: #cbd5e1;
 }
 
-/* --- Bố cục lưới chính --- */
-.employee-self-view .form-grid {
+.self-header{
+  height: 80px;
+}
+
+.self-header-info h1 {
+  font-size: 1.6rem;
+  margin: 0 0 0.5rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.self-employee-code {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0.5rem 0;
+}
+
+.status-active { color: #16a34a; font-weight: 600; }
+.status-inactive { color: #dc2626; font-weight: 600; }
+
+.self-position {
+  font-size: 1rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Wrapper chứa các section */
+.self-info-wrapper {
+  flex: 1;
+  padding: 1.5rem 2rem 2rem;
+  overflow-y: auto;
+}
+
+/* Mỗi section là một khối riêng biệt */
+.self-section {
+  margin-bottom: 2.5rem;
+}
+
+.self-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0 0 1.2rem 0;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+/* Grid 4 cột bên trong mỗi section */
+.self-info-grid {
   display: grid;
-  /* Bố cục 4 cột giống trang quản lý */
-  grid-template-columns: repeat(4, 1fr); 
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.6rem 2rem;
   align-items: start;
 }
 
-/* --- Tiêu đề section (VD: "Thông tin cá nhân") --- */
-.employee-self-view .form-section-title {
-  /* Chiếm trọn 4 cột */
-  grid-column: 1 / -1; 
-  color: var(--primary-accent-color);
+/* Các ô thông tin */
+.self-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.self-info-item.span-2 {
+  grid-column: span 2;
+}
+
+.self-info-item label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.self-info-item span {
   font-size: 1rem;
   font-weight: 600;
-  margin: 1rem 0 0.5rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--primary-accent-color);
+  color: #1e293b;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
-/* --- Từng mục thông tin --- */
-.employee-self-view .form-group {
-    display: flex;
+/* Responsive đẹp */
+@media (max-width: 1024px) {
+  .self-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .self-header {
     flex-direction: column;
+    text-align: center;
+    gap: 1.2rem;
+  }
+  .self-avatar {
+    width: 80px;
+    height: 80px;
+  }
 }
 
-/* Dùng cho các mục dài như Quê quán, Địa chỉ */
-.employee-self-view .form-group.span-2 {
-    grid-column: span 2;
+@media (max-width: 640px) {
+  .self-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .self-info-item.span-2 {
+    grid-column: 1;
+  }
+  .employee-self-container {
+    border-radius: 12px;
+  }
+  .self-header, .self-info-wrapper {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
-
-.employee-self-view .form-group label {
-  font-size: 0.85rem;
-  color: var(--text-secondary-color);
-  margin-bottom: 8px;
-}
-
-.employee-self-view .form-group span {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-primary-color);
-}
-

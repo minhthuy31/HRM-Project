@@ -37,6 +37,9 @@ body {
   background-color: var(--main-bg);
   color: var(--main-text);
   transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* ================== DASHBOARD CONTAINER ================== */
@@ -166,13 +169,17 @@ li a:hover {
   display: flex;
   flex-direction: column;
   height: 100vh; /* Giới hạn chiều cao */
+  overflow: hidden !important;
 }
 
 /* VÙNG CHỨA NỘI DUNG CHÍNH CỦA TRANG */
 .page-content-wrapper {
-  flex-grow: 1; /* Lấp đầy không gian còn lại dưới Navbar */
-  overflow-y: auto; /* Tự động tạo thanh cuộn dọc khi cần */
-  padding: 20px;
+  flex-grow: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 20px 20px; /* tùy bạn có muốn padding không */
+  min-height: 0;
 }
 
 /* ================== NAVBAR ================== */

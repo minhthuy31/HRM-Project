@@ -138,8 +138,8 @@ const DashboardLayout = ({ children }) => {
             </Link>
           </li>
           <li>
-            <Link to="/khen-thuong">
-              <span className="icon"></span>
+            <Link to="/hop-dong">
+              <span className="icon">🤝</span>
               <span className="text">Quản lý hợp đồng</span>
             </Link>
           </li>

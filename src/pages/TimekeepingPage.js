@@ -27,7 +27,7 @@ const TimekeepingPage = () => {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const [empRes, attendanceRes] = await Promise.all([
-        api.get("/NhanVien"),
+        api.get("/NhanVien?trangThai=true"),
         api.get(`/ChamCong?year=${year}&month=${month}`),
       ]);
 
@@ -323,7 +323,10 @@ const TimekeepingPage = () => {
                         <div className="employee-info">
                           <span className="font-bold">{emp.hoTen}</span>
                           <br />
-                          <span className="text-red-400 font-normal opacity-70">
+                          <span
+                            style={{ color: "#f87171", opacity: 0.6 }}
+                            className="font-normal text-sm"
+                          >
                             {emp.maNhanVien}
                           </span>
                         </div>

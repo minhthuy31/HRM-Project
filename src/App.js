@@ -25,6 +25,8 @@ import EmployeeDetailPageNV from "./pages/EmployeeDetailPageNV";
 import EmployeeWelcome from "./pages/EmployeeWelcome";
 import MyTimekeepingPage from "./pages/MyTimekeepingPage";
 import KioskPage from "./pages/KioskPage";
+import MyPayslipPage from "./pages/MyPayslipPage";
+import ContractManagementPage from "./pages/ContractManagementPage.js";
 
 function App() {
   return (
@@ -45,6 +47,7 @@ function App() {
         <Route path="/dao-tao" element={<TrainingPage />} />
         <Route path="/bao-cao" element={<ReportsPage />} />
         <Route path="/kiosk" element={<KioskPage />} />
+        <Route path="/hop-dong" element={<ContractManagementPage />} />
 
         <Route path="/nhan-vien/:employeeId" element={<EmployeeDetailPage />} />
         <Route
@@ -59,6 +62,7 @@ function App() {
           {/* Trang con cho thông tin chi tiết */}
           <Route path="details" element={<EmployeeDetailPageNV />} />
           <Route path="timekeeping" element={<MyTimekeepingPage />} />
+          <Route path="payslip" element={<MyPayslipPage />} />
         </Route>
       </Routes>
     </Router>
