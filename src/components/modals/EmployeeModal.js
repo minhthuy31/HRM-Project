@@ -29,9 +29,28 @@ const EmployeeModal = ({
   const fileInputRef = useRef(null);
 
   useEffect(() => {
+    // Khởi tạo dữ liệu ban đầu
     const initialData = employee
-      ? { ...employee }
-      : { trangThai: true, gioiTinh: 1 };
+      ? {
+          ...employee,
+          luongCoBan:
+            employee.luongCoBan !== undefined && employee.luongCoBan !== null
+              ? employee.luongCoBan
+              : "",
+          luongTroCap:
+            employee.luongTroCap !== undefined && employee.luongTroCap !== null
+              ? employee.luongTroCap
+              : "",
+          soHopDong: employee.soHopDong || "",
+        }
+      : {
+          trangThai: true,
+          gioiTinh: 1,
+          luongCoBan: "",
+          luongTroCap: "",
+          soHopDong: "",
+        };
+
     setFormData(initialData);
     setPreviewUrl(initialData.hinhAnh || null);
     setSelectedFile(null);
@@ -43,6 +62,20 @@ const EmployeeModal = ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  // --- XỬ LÝ NHẬP TIỀN TỆ (Chỉ nhận số) ---
+  const handleCurrencyChange = (e) => {
+    const { name, value } = e.target;
+    // Loại bỏ tất cả ký tự không phải số
+    const rawValue = value.replace(/\D/g, "");
+    setFormData((prev) => ({ ...prev, [name]: rawValue }));
+  };
+
+  // --- HÀM FORMAT TIỀN TỆ (Hiển thị 5 000 000) ---
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null || value === "") return "";
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   };
 
   const handleDateChange = (date, name) => {
@@ -59,7 +92,25 @@ const EmployeeModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData, selectedFile);
+
+    // Xử lý dữ liệu trước khi gửi (convert lương sang số)
+    const dataToSubmit = { ...formData };
+
+    // Convert Lương Cơ Bản
+    if (dataToSubmit.luongCoBan !== "" && dataToSubmit.luongCoBan !== null) {
+      dataToSubmit.luongCoBan = parseFloat(dataToSubmit.luongCoBan);
+    } else {
+      dataToSubmit.luongCoBan = 0;
+    }
+
+    // Convert Lương Trợ Cấp
+    if (dataToSubmit.luongTroCap !== "" && dataToSubmit.luongTroCap !== null) {
+      dataToSubmit.luongTroCap = parseFloat(dataToSubmit.luongTroCap);
+    } else {
+      dataToSubmit.luongTroCap = 0;
+    }
+
+    onSave(dataToSubmit, selectedFile);
   };
 
   // --- MENU CONFIGURATION ---
@@ -67,7 +118,7 @@ const EmployeeModal = ({
     { id: "personal", label: "Thông tin cá nhân" },
     { id: "identity", label: "Giấy tờ tùy thân" },
     { id: "contact", label: "Liên hệ" },
-    { id: "job", label: "Quá trình làm việc & HĐ" },
+    { id: "job", label: "Công việc & Lương" },
     { id: "bank", label: "Thông tin tài khoản" },
     { id: "education", label: "Trình độ học vấn" },
     { id: "insurance", label: "Bảo hiểm" },
@@ -485,7 +536,7 @@ const EmployeeModal = ({
     </div>
   );
 
-  // 4. Quá trình làm việc & Hợp đồng
+  // 4. Quá trình làm việc & Hợp đồng (ĐÃ CẬP NHẬT)
   const renderJob = () => (
     <div className="tab-content">
       <div className="form-section-title">Thông tin quản lý</div>
@@ -567,62 +618,45 @@ const EmployeeModal = ({
         </div>
       </div>
 
-      <div className="form-section-title">Thông tin hợp đồng hiện tại</div>
-      <div className="form-grid grid-2">
+      {/* --- PHẦN BỔ SUNG: LƯƠNG & HỢP ĐỒNG --- */}
+      <div className="form-section-title" style={{ marginTop: "20px" }}>
+        Lương & Hợp đồng
+      </div>
+      <div className="form-grid grid-3">
         <div className="form-group">
-          <label>Loại hợp đồng</label>
-          <select
-            name="maHopDong"
-            value={formData.maHopDong || ""}
-            onChange={handleChange}
+          <label>Lương cơ bản (VNĐ)</label>
+          <input
+            type="text"
+            name="luongCoBan"
+            value={formatCurrency(formData.luongCoBan)}
+            onChange={handleCurrencyChange}
             disabled={isViewOnly}
-          >
-            <option value="">-- Chọn loại HĐ --</option>
-            {hopDongs.map((hd) => (
-              <option key={hd.maHopDong} value={hd.maHopDong}>
-                {hd.loaiHopDong}
-              </option>
-            ))}
-          </select>
+            placeholder="Nhập mức lương..."
+          />
+        </div>
+        {/* --- Ô NHẬP TRỢ CẤP MỚI (Đã sửa name và value) --- */}
+        <div className="form-group">
+          <label>Lương trợ cấp (VNĐ)</label>
+          <input
+            type="text"
+            name="luongTroCap"
+            value={formatCurrency(formData.luongTroCap)}
+            onChange={handleCurrencyChange}
+            disabled={isViewOnly}
+            placeholder="Nhập trợ cấp..."
+          />
         </div>
         <div className="form-group">
           <label>Số hợp đồng</label>
-          <input type="text" placeholder="Cần bổ sung DTO..." disabled />
+          <input
+            type="text"
+            name="soHopDong"
+            value={formData.soHopDong}
+            onChange={handleChange}
+            disabled={isViewOnly}
+            placeholder="VD: HD-001/2025"
+          />
         </div>
-        <div className="form-group">
-          <label>Thời gian (Từ - Đến)</label>
-          <div style={{ display: "flex", gap: "5px", width: "100%" }}>
-            <DatePicker
-              placeholderText="Từ ngày"
-              disabled
-              className="date-input-small"
-            />
-            <DatePicker
-              placeholderText="Đến ngày"
-              disabled
-              className="date-input-small"
-            />
-          </div>
-        </div>
-        <div className="form-group">
-          <label>Lương cơ bản (VND)</label>
-          <input type="number" placeholder="Cần bổ sung DTO..." disabled />
-        </div>
-      </div>
-
-      <div className="form-section-title">Lịch sử hợp đồng</div>
-      <div
-        style={{
-          padding: "10px",
-          background: "#f9f9f9",
-          border: "1px solid #eee",
-          fontSize: "13px",
-          color: "#666",
-          borderRadius: "4px",
-        }}
-      >
-        Tính năng đang phát triển (Cần bổ sung API lấy danh sách lịch sử hợp
-        đồng).
       </div>
     </div>
   );
@@ -794,7 +828,6 @@ const EmployeeModal = ({
     <div className="employee-modal-overlay">
       <div className="employee-modal__content">
         <div className="employee-modal__header">
-          {/* CẬP NHẬT PHẦN TIÊU ĐỀ TẠI ĐÂY */}
           <h2>
             {employee
               ? `Nhân viên: ${employee.maNhanVien || "..."} - ${

@@ -1,192 +1,263 @@
-/* ============================================== */
-/* == CSS DÀNH RIÊNG CHO TRANG CHI TIẾT & EDIT == */
-/* ============================================== */
-
+/* --- LAYOUT CHÍNH CHO TRANG CHI TIẾT & EDIT --- */
 .emp-detail-page {
-  padding: 24px;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto; 
+  background-color: #f0f2f5; /* Nền xám nhẹ cho toàn trang */
+  padding: 20px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
-/* --- Header của toàn trang (chứa nút back) --- */
+/* Header chứa nút Back */
 .emp-detail-page__header {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .emp-detail-page__back-btn {
-  background: none;
-  border: 1px solid var(--sidebar-border);
+  background: white;
+  border: 1px solid #ddd;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
-  color: var(--main-text);
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
+
 .emp-detail-page__back-btn:hover {
-  background-color: var(--hover-bg);
+  background-color: #f9f9f9;
+  color: #0e7c7b;
+  border-color: #0e7c7b;
 }
 
-/* --- Thẻ card chính chứa nội dung --- */
-.emp-detail-card {
-  background: var(--card-bg);
+/* --- CONTAINER CHÍNH (Giống Modal Content) --- */
+.emp-layout-container {
+  background: #fff;
   border-radius: 8px;
-  padding: 24px 32px;
-  box-shadow: 0 4px 12px var(--shadow-color, rgba(0,0,0,0.1));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden; /* Để scroll bên trong */
+  border: 1px solid #e1e4e8;
 }
 
-/* --- Header của card (chứa avatar và tên) --- */
-.emp-detail-card__header {
+/* Header của Container (Tên NV) */
+.emp-layout-header {
+  padding: 15px 30px;
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--sidebar-border);
+  justify-content: space-between;
+  flex-shrink: 0;
 }
 
-.emp-detail-card__avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+.emp-layout-header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
 }
 
-.emp-detail-card__avatar-placeholder {
-  color: #ccc;
-}
-
-.emp-detail-card__header-info h1 {
-  margin: 0 0 4px 0;
-  font-size: 28px;
+.emp-layout-status {
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 12px;
   font-weight: 600;
 }
+.status-active { background-color: #e6f4ea; color: #28a745; }
+.status-inactive { background-color: #fbeaea; color: #dc3545; }
 
-.emp-detail-card__header-info p {
-  margin: 0;
-  font-size: 16px;
-  color: #666;
+/* Body Layout (Sidebar + Content) */
+.emp-layout-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
-.emp-detail-card__header-info span {
-  font-size: 16px;
-  color: #333;
+
+/* --- SIDEBAR MENU --- */
+.emp-sidebar {
+  width: 260px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #dce0e4;
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
+.emp-sidebar-item {
+  padding: 15px 25px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: #55606d;
+  border-left: 4px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
 
-/* --- Form hiển thị thông tin --- */
-.emp-detail-card__form {
+.emp-sidebar-item:hover {
+  background-color: #e9ecef;
+  color: #0e7c7b;
+}
+
+.emp-sidebar-item.active {
+  background-color: #fff;
+  color: #0e7c7b;
+  border-left-color: #0e7c7b;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* --- MAIN CONTENT AREA --- */
+.emp-main {
+  flex: 1;
+  padding: 30px 40px;
+  overflow-y: auto;
+  background-color: #fff;
+}
+
+/* --- FORM STYLES (Dùng chung) --- */
+.form-section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0e7c7b;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-top: 10px;
+}
+.form-section-title:first-child { margin-top: 0; }
+
+.form-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px 28px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px 25px;
+  margin-bottom: 25px;
 }
+.form-grid.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.form-grid.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.form-grid.grid-1 { grid-template-columns: 1fr; }
 
-.emp-detail-card__form-group {
+.form-group {
   display: flex;
   flex-direction: column;
 }
 
-.emp-detail-card__form-group label {
+.form-group label {
+  font-size: 13.5px;
   font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 6px;
   color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* --- Style CHUNG cho tất cả các ô (input, select, span) --- */
-.emp-detail-card__form-group input,
-.emp-detail-card__form-group select,
-.emp-detail-card__form-group span {
-  display: flex;
-  align-items: center;
+/* Input / Select / View-only Span */
+.form-group input,
+.form-group select,
+.form-group span.view-field,
+.react-datepicker__input-container input {
+  height: 44px !important;
+  padding: 0 12px;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  font-size: 14.5px;
   width: 100%;
-  height: 45px; /* Đặt chiều cao cố định */
-  padding: 0 14px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
   box-sizing: border-box;
-  margin: 0;
-}
-
-/* --- Style RIÊNG cho ô chỉ xem (trang Detail) --- */
-.emp-detail-card__form-group span {
-  background-color: #f0f0f0; /* Màu nền xám nhạt giống ô bị vô hiệu hóa */
+  background-color: #fff;
   color: #333;
-}
-
-/* --- Style RIÊNG cho ô nhập liệu (trang Edit) --- */
-.emp-detail-card__form-group input,
-.emp-detail-card__form-group select {
-  background-color: #ffffff;
-}
-
-.emp-detail-card__form-group input:focus,
-.emp-detail-card__form-group select:focus {
-  background-color: white;
-  border-color: #007bff;
-  outline: none;
-}
-
-
-.emp-detail-card__section-title {
-  grid-column: 1 / -1;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--logo-text-color);
-  margin-top: 20px;
-  margin-bottom: 0px;
-  border-bottom: 2px solid var(--hover-bg);
-  padding-bottom: 8px;
-}
-
-
-/* --- Dành riêng cho trang Edit --- */
-.emp-detail-card__form-actions {
-  grid-column: 1 / -1;
-  margin-top: 20px;
-  text-align: right;
-}
-
-.emp-detail-card__save-btn {
-  background-color: #007bff;
-  color: white;
-  padding: 12px 22px;
-  border: none;
-  border-radius: 6px;
-  font-size: 18px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.emp-detail-card__save-btn:hover {
-  background-color: #0056b3;
-}
-
-.emp-detail-card__avatar-edit-container {
-  position: relative;
-  width: 100px;
-  height: 100px;
-}
-
-.emp-detail-card__avatar-edit-btn {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background-color: #007bff;
-  color: white;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  cursor: pointer;
-  border: 2px solid white;
-  transition: background-color 0.2s;
 }
-.emp-detail-card__avatar-edit-btn:hover {
-  background-color: #0056b3;
+
+/* Style riêng cho chế độ xem (span) */
+.form-group span.view-field {
+  background-color: #f8f9fa; /* Nền xám nhẹ cho ô chỉ xem */
+  border-color: #e9ecef;
+  color: #495057;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #0e7c7b;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 124, 123, 0.1);
+}
+
+/* AVATAR SECTION */
+.avatar-section {
+  width: 130px;         /* hơi rộng hơn avatar 1 chút */
+  height: 130px;        /* KHÔNG để auto nữa */
+  display: flex;
+  align-items: center;  /* canh giữa dọc */
+  justify-content: center; /* canh giữa ngang */
+  padding: 0;          
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  background-color: #fdfdfd;
+}
+
+.avatar-preview img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 10px;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.avatar-upload-label {
+  font-size: 13.5px;
+  color: #0e7c7b;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* FOOTER ACTIONS (Cho trang Edit) */
+.emp-layout-footer {
+  padding: 15px 40px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  background-color: #f8f9fa;
+  gap: 15px;
+}
+
+.btn-save {
+  background-color: #0e7c7b;
+  color: white;
+  padding: 0 30px;
+  height: 40px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14.5px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(14, 124, 123, 0.2);
+}
+.btn-save:hover { background-color: #0b6362; transform: translateY(-1px); }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .form-grid.grid-3, .form-grid.grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

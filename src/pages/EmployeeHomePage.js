@@ -4,7 +4,11 @@ import { FaSearch } from "react-icons/fa";
 import { FiSun, FiMoon, FiLogOut } from "react-icons/fi";
 import { Link, useNavigate, useParams, Outlet } from "react-router-dom";
 import "../styles/EmployeeHome.css";
+
+// Import các Modal
 import LeaveRequestModal from "../components/modals/LeaveRequestModal";
+import OTRequestModal from "../components/modals/OTRequestModal"; // Mới
+import BusinessTripModal from "../components/modals/BusinessTripModal"; // Mới
 
 import CheckInScanner from "../components/CheckInScanner";
 import "../styles/Modal.css";
@@ -22,10 +26,15 @@ const EmployeeHomePage = () => {
   const navigate = useNavigate();
   const { employeeId } = useParams();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  // --- STATE MỚI CHO QUÉT QR ---
-  const [isScannerOpen, setIsScannerOpen] = useState(false); // 2. State quản lý modal quét
-  const [scanResult, setScanResult] = useState(null); // Để lưu thông báo quét
+  // --- STATE MODALS ---
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false); // Đổi tên cho rõ nghĩa
+  const [isOTModalOpen, setIsOTModalOpen] = useState(false); // Mới: Modal OT
+  const [isTripModalOpen, setIsTripModalOpen] = useState(false); // Mới: Modal Công tác
+
+  // --- STATE QUÉT QR ---
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+
   const [timekeepingSummary, setTimekeepingSummary] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode);
@@ -43,16 +52,13 @@ const EmployeeHomePage = () => {
         const year = today.getFullYear();
         const month = today.getMonth() + 1;
 
-        // Gọi 2 API song song
         const [userRes, timekeepingRes] = await Promise.all([
           api.get(`/NhanVien/${employeeId}`),
-          // API này lấy dữ liệu chấm công (bao gồm 'remainingLeaveDays')
           api.get(`/ChamCong/${employeeId}?year=${year}&month=${month}`),
         ]);
 
         setUser(userRes.data);
 
-        // Lưu summary (chứa "RemainingLeaveDays") vào state
         if (timekeepingRes.data.summaries) {
           setTimekeepingSummary(timekeepingRes.data.summaries[employeeId]);
         }
@@ -87,54 +93,67 @@ const EmployeeHomePage = () => {
     hour12: false,
   }).format(currentTime);
 
+  // --- XỬ LÝ ĐĂNG KÝ NGHỈ PHÉP ---
   const handleSaveLeaveRequest = async (requestData) => {
-    // requestData giờ sẽ chứa: ngayBatDau, ngayKetThuc, lyDo, soNgayNghi, file
-
-    // 1. Tạo FormData để gửi file
     const formData = new FormData();
-
-    // 2. Append dữ liệu vào FormData
-    // Tên key (vd: "NgayBatDau") phải khớp với DTO (DonNghiPhepCreateDto) ở Backend
     formData.append("NgayBatDau", requestData.ngayBatDau);
     formData.append("NgayKetThuc", requestData.ngayKetThuc);
     formData.append("LyDo", requestData.lyDo);
     formData.append("SoNgayNghi", requestData.soNgayNghi);
 
-    // 3. Thêm file nếu có
     if (requestData.file) {
       formData.append("File", requestData.file);
     }
 
     try {
-      // 4. Gọi API mới (create-with-file) và gửi FormData
       await api.post("/DonNghiPhep/create-with-file", formData, {
-        headers: {
-          // Bắt buộc set header này khi dùng FormData
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Gửi đơn xin nghỉ thành công!");
-      setIsModalOpen(false);
+      setIsLeaveModalOpen(false);
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || "Đã có lỗi xảy ra khi gửi đơn.";
+      const errorMessage = error.response?.data?.message || "Đã có lỗi xảy ra.";
       alert(`Lỗi: ${errorMessage}`);
     }
   };
 
-  // --- HÀM MỚI XỬ LÝ KẾT QUẢ QUÉT ---
+  // --- MỚI: XỬ LÝ ĐĂNG KÝ OT ---
+  const handleSaveOTRequest = async (data) => {
+    try {
+      // data: { ngayLamThem, gioBatDau, gioKetThuc, lyDo }
+      await api.post("/DangKyOT", data);
+      alert("Đăng ký làm thêm giờ thành công!");
+      setIsOTModalOpen(false);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Lỗi khi đăng ký OT.";
+      alert(`Lỗi: ${errorMessage}`);
+    }
+  };
+
+  // --- MỚI: XỬ LÝ ĐĂNG KÝ CÔNG TÁC ---
+  const handleSaveTripRequest = async (data) => {
+    try {
+      // data: { ngayBatDau, ngayKetThuc, noiCongTac, mucDich, phuongTien }
+      await api.post("/DangKyCongTac", { ...data, MaNhanVien: employeeId });
+      alert("Đăng ký công tác thành công!");
+      setIsTripModalOpen(false);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Lỗi khi đăng ký công tác.";
+      alert(`Lỗi: ${errorMessage}`);
+    }
+  };
+
+  // --- XỬ LÝ QUÉT QR ---
   const handleScanSuccess = (message) => {
-    // 3. Hàm chạy khi quét thành công
     setScanResult({ type: "success", text: message });
-    setIsScannerOpen(false); // Tắt camera
-    // Tự động xóa thông báo sau 5 giây
+    setIsScannerOpen(false);
     setTimeout(() => setScanResult(null), 5000);
   };
 
   const handleScanError = (message) => {
-    // 4. Hàm chạy khi quét lỗi
     setScanResult({ type: "error", text: message });
-    // Không tắt camera, để người dùng quét lại
   };
 
   if (loading || !user) {
@@ -189,18 +208,31 @@ const EmployeeHomePage = () => {
             <div className="action-buttons">
               <button
                 className="sidebar-action-btn"
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => setIsLeaveModalOpen(true)}
               >
                 Đăng ký nghỉ
               </button>
-              <button className="sidebar-action-btn">
-                Đăng ký OT / Công tác
+
+              {/* Nút Đăng ký OT */}
+              <button
+                className="sidebar-action-btn"
+                onClick={() => setIsOTModalOpen(true)}
+              >
+                Đăng ký OT
               </button>
-              {/* 5. THÊM NÚT QUÉT QR VÀO ĐÂY */}
+
+              {/* Nút Đăng ký Công tác */}
+              <button
+                className="sidebar-action-btn"
+                onClick={() => setIsTripModalOpen(true)}
+              >
+                Đăng ký Công tác
+              </button>
+
               <button
                 className="sidebar-action-btn sidebar-action-btn-checkin"
                 onClick={() => {
-                  setScanResult(null); // Xóa lỗi cũ (nếu có)
+                  setScanResult(null);
                   setIsScannerOpen(true);
                 }}
               >
@@ -240,36 +272,50 @@ const EmployeeHomePage = () => {
         </main>
       </div>
 
-      {isModalOpen && (
+      {/* --- MODAL SECTION --- */}
+
+      {/* 1. Modal Nghỉ Phép */}
+      {isLeaveModalOpen && (
         <LeaveRequestModal
           onSave={handleSaveLeaveRequest}
-          onCancel={() => setIsModalOpen(false)}
+          onCancel={() => setIsLeaveModalOpen(false)}
           remainingLeaveDays={timekeepingSummary?.remainingLeaveDays}
         />
       )}
 
-      {/* 6. THÊM MODAL QUÉT QR MỚI VÀO ĐÂY */}
+      {/* 2. Modal OT */}
+      {isOTModalOpen && (
+        <OTRequestModal
+          onSave={handleSaveOTRequest}
+          onCancel={() => setIsOTModalOpen(false)}
+        />
+      )}
+
+      {/* 3. Modal Công Tác */}
+      {isTripModalOpen && (
+        <BusinessTripModal
+          onSave={handleSaveTripRequest}
+          onCancel={() => setIsTripModalOpen(false)}
+        />
+      )}
+
+      {/* 4. Modal Quét QR */}
       {isScannerOpen && (
         <div className="modal-overlay">
           <div className="modal-content scanner-modal">
             <h2>Đưa mã QR vào khung hình</h2>
-
-            {/* Đây là component camera */}
             <CheckInScanner
               onScanSuccess={handleScanSuccess}
               onScanError={handleScanError}
             />
-
-            {/* Hiển thị lỗi quét (nếu có) */}
             {scanResult && scanResult.type === "error" && (
               <p className="scan-error">{scanResult.text}</p>
             )}
-
             <button
               className="modal-close-btn"
               onClick={() => {
                 setIsScannerOpen(false);
-                setScanResult(null); // Xóa thông báo
+                setScanResult(null);
               }}
             >
               Đóng
@@ -278,7 +324,7 @@ const EmployeeHomePage = () => {
         </div>
       )}
 
-      {/* Hiển thị thông báo thành công (bên ngoài modal) */}
+      {/* Popup thông báo thành công */}
       {scanResult && scanResult.type === "success" && (
         <div className="scan-success-popup">{scanResult.text}</div>
       )}

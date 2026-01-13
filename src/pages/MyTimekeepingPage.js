@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { FaChevronLeft, FaChevronRight, FaPlus } from "react-icons/fa";
 import "../styles/MyTimekeepingPage.css";
+// IMPORT MODAL CŨ ĐÃ CÓ (Theo yêu cầu của bạn)
 import LeaveRequestModal from "../components/modals/LeaveRequestModal";
 
 const getDayOfWeek = (year, month, day) => {
@@ -23,10 +24,9 @@ const MyTimekeepingPage = () => {
   const { employeeId } = useParams();
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // CẬP NHẬT: Tách state để quản lý dữ liệu rõ ràng hơn
   const [summary, setSummary] = useState(null);
-  const [recordsMap, setRecordsMap] = useState(new Map()); // Dữ liệu chấm công đã duyệt
-  const [pendingRequestsMap, setPendingRequestsMap] = useState(new Map()); // MỚI: Dữ liệu đơn đang chờ
+  const [recordsMap, setRecordsMap] = useState(new Map());
+  const [pendingRequestsMap, setPendingRequestsMap] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -50,7 +50,6 @@ const MyTimekeepingPage = () => {
 
         const records = new Map();
         dailyRecords.forEach((rec) => {
-          // SỬA Ở ĐÂY: Đổi cách lấy ngày để tránh lỗi timezone và đồng bộ với trang quản lý
           const day = parseInt(rec.ngayChamCong.split("-")[2], 10);
           records.set(day, rec);
         });
@@ -58,8 +57,7 @@ const MyTimekeepingPage = () => {
 
         const pending = new Map();
         pendingRequests.forEach((req) => {
-          // SỬA Ở ĐÂY: Đổi luôn cho nhất quán
-          const day = new Date(req.ngayNghi).getUTCDate(); // Giữ nguyên getUTCDate vì đây là full date object
+          const day = new Date(req.ngayNghi).getUTCDate();
           pending.set(day, req);
         });
         setPendingRequestsMap(pending);
@@ -82,7 +80,6 @@ const MyTimekeepingPage = () => {
     );
   };
 
-  // CẬP NHẬT: Xử lý cập nhật giao diện tức thì sau khi gửi đơn
   const handleLeaveRequestSubmit = async (requestData) => {
     try {
       const leaveRequestPayload = {
@@ -96,6 +93,7 @@ const MyTimekeepingPage = () => {
       alert("Gửi đơn xin nghỉ thành công! Vui lòng chờ quản lý duyệt.");
       setIsModalOpen(false);
 
+      // Cập nhật UI ngay lập tức
       const newPendingRequest = response.data;
       const day = new Date(newPendingRequest.ngayNghi).getUTCDate();
       setPendingRequestsMap((prevMap) =>
@@ -123,11 +121,14 @@ const MyTimekeepingPage = () => {
   ).getDate();
   const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // MỚI: Hàm hiển thị trạng thái kết hợp
+  // --- HÀM XỬ LÝ TRẠNG THÁI (Đã loại bỏ logic hiển thị OT) ---
   const getWorkDayStyleAndStatus = (day) => {
+    // 1. Ưu tiên hiển thị dữ liệu chấm công đã có
     if (recordsMap.has(day)) {
       const record = recordsMap.get(day);
       const ngayCong = record?.ngayCong;
+
+      // LOGIC CŨ: Không check OT, chỉ check công
       if (ngayCong === 1.0)
         return {
           text: "1.0",
@@ -141,8 +142,14 @@ const MyTimekeepingPage = () => {
           note: record.ghiChu,
         };
       if (ngayCong === 0.0)
-        return { text: "0.0", className: "status-absent", note: record.ghiChu };
+        return {
+          text: "0.0",
+          className: "status-absent",
+          note: record.ghiChu,
+        };
     }
+
+    // 2. Nếu không có chấm công, kiểm tra đơn chờ duyệt
     if (pendingRequestsMap.has(day)) {
       const request = pendingRequestsMap.get(day);
       return {
@@ -151,6 +158,7 @@ const MyTimekeepingPage = () => {
         note: request.lyDo,
       };
     }
+
     return { text: "", className: "", note: "" };
   };
 
@@ -199,7 +207,6 @@ const MyTimekeepingPage = () => {
                 </div>
                 <div className="status-col">
                   <span className={className}>{text}</span>
-                  {/* Thêm dòng này để hiển thị lý do/ghi chú */}
                   {note && <span className="reason-note">{note}</span>}
                 </div>
               </div>
@@ -208,7 +215,6 @@ const MyTimekeepingPage = () => {
         )}
       </div>
 
-      {/* Phần summary và modal không đổi */}
       <div className="summary-section">
         <h4>Tổng kết công tháng {currentDate.getMonth() + 1}</h4>
         {summary ? (
@@ -249,10 +255,13 @@ const MyTimekeepingPage = () => {
         )}
       </div>
 
+      {/* MODAL ĐƯỢC IMPORT VÀ SỬ DỤNG LẠI */}
       {isModalOpen && (
         <LeaveRequestModal
           onSave={handleLeaveRequestSubmit}
           onCancel={() => setIsModalOpen(false)}
+          // --- SỬA Ở ĐÂY: Truyền thêm prop remainingLeave ---
+          remainingLeave={summary?.remainingLeaveDays || 0}
         />
       )}
     </div>
