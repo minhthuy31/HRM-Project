@@ -1,144 +1,173 @@
-/* ================== QUẢN LÝ ĐƠN TỪ – ĐẸP + SCROLL HOÀN HẢO NHƯ TRANG TÍNH LƯƠNG ================== */
+/* ================== QUẢN LÝ ĐƠN TỪ - UPDATE GIAO DIỆN TAB ================== */
 
 .leave-management-container {
-    background-color: var(--card-bg, #ffffff);
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     height: 100%;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 .leave-management-container h1 {
-    margin: 0 0 1.5rem 0;
-    font-size: 1.8rem;
-    font-weight: 600;
+    margin: 0 0 20px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #333;
+    flex-shrink: 0;
 }
 
-/* Nút lọc */
-.filter-buttons {
+/* --- TAB CHÍNH (LOẠI ĐƠN) --- */
+.main-tabs {
+    display: flex;
+    gap: 0; /* Tab dính liền nhau */
+    border-bottom: 2px solid #e0e0e0;
     margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.main-tabs button {
+    padding: 12px 25px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 16px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: -2px; /* Để border active đè lên line bottom */
+}
+
+.main-tabs button:hover {
+    color: #0e7c7b;
+    background-color: #f8fcfc;
+}
+
+.main-tabs button.active {
+    color: #0e7c7b;
+    border-bottom-color: #0e7c7b;
+}
+
+/* --- FILTER CON (TRẠNG THÁI) --- */
+.sub-filters {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
+    margin-bottom: 15px;
+    flex-shrink: 0;
 }
 
-.filter-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #ccc;
-    background-color: #f0f0f0;
-    border-radius: 6px;
-    cursor: pointer;
+.sub-filters button {
+    padding: 6px 14px;
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-radius: 20px; /* Bo tròn kiểu pill */
+    font-size: 13px;
     font-weight: 500;
+    color: #555;
+    cursor: pointer;
     transition: all 0.2s;
 }
 
-.filter-buttons button.active {
-    background-color: #007bff;
+.sub-filters button:hover {
+    background-color: #e2e6ea;
+}
+
+.sub-filters button.active {
+    background-color: #333;
     color: white;
-    border-color: #007bff;
+    border-color: #333;
 }
 
-/* Vùng chứa bảng – QUAN TRỌNG NHẤT */
+/* --- TABLE CONTAINER & TABLE (Giữ nguyên logic cũ, chỉ tinh chỉnh chút) --- */
 .requests-table-container {
-    flex: 1;                         /* Chiếm hết không gian còn lại */
-    min-height: 0;                   /* BẮT BUỘC để scroll hoạt động */
-    overflow: auto;                  /* Scroll dọc + ngang */
-    border-radius: 8px;
+    flex: 1;
+    overflow: auto;
     border: 1px solid #e0e0e0;
+    border-radius: 6px;
     background: white;
-    -webkit-overflow-scrolling: touch;
-    overflow-y: auto;     /* Chỉ cho cuộn dọc */
-  overflow-x: hidden
+    position: relative;
 }
 
-/* Bảng */
 .requests-table {
     width: 100%;
-    min-width: 1200px;               /* Đảm bảo có scroll ngang khi thu nhỏ */
     border-collapse: collapse;
-    font-size: 0.95rem;
+    text-align: left;
+    white-space: nowrap;
 }
 
 .requests-table th,
 .requests-table td {
-    border: 1px solid #dee2e6;
     padding: 12px 15px;
-    text-align: center;
+    border-bottom: 1px solid #eee;
     vertical-align: middle;
-}
-
-.requests-table thead {
-    background-color: #f8f9fa;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    font-size: 14px;
 }
 
 .requests-table th {
-    font-weight: 600;
-    background-color: #f1f3f5;
-}
-
-.requests-table tbody tr:nth-child(even) {
     background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 2px solid #dee2e6;
 }
 
 .requests-table tbody tr:hover {
-    background-color: #e3f2fd !important;
+    background-color: #f1f3f5;
 }
 
-/* Cột lý do dài */
+/* Cột lý do */
 .reason-cell {
-    max-width: 280px;
-    white-space: pre-wrap;
+    min-width: 200px;
+    max-width: 350px;
+    white-space: normal;
     word-wrap: break-word;
+    color: #444;
+    line-height: 1.4;
 }
 
 /* Nút hành động */
 .action-buttons {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
 }
 
 .action-buttons button {
     border: none;
-    padding: 7px 12px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 4px;
     color: white;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: opacity 0.2s;
-}
-
-.action-buttons button:hover {
-    opacity: 0.85;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .approve-btn { background-color: #28a745; }
 .reject-btn   { background-color: #dc3545; }
 
-/* Badge trạng thái */
+.approve-btn:hover { background-color: #218838; }
+.reject-btn:hover { background-color: #c82333; }
+
+/* Badge Status */
 .status-badge {
     padding: 4px 10px;
     border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
 }
+.status-badge.pending { background-color: #fff3cd; color: #856404; }
+.status-badge.approved { background-color: #d4edda; color: #155724; }
+.status-badge.rejected { background-color: #f8d7da; color: #721c24; }
 
-.status-badge.pending { background-color: #ffc107;; }
-.status-badge.approved { background-color: #28a745; }
-.status-badge.rejected { background-color: #dc3545; }
-
-
-/* Lỗi */
-.error-message {
-    color: #dc3545;
-    margin: 1rem 0;
+.no-data {
+    text-align: center;
+    color: #999;
+    margin-top: 50px;
+    font-size: 16px;
 }
-

@@ -1,211 +1,191 @@
 import React, { useState, useEffect } from "react";
-import "../../styles/Modal.css";
+import "../../styles/Modal.css"; // Dùng chung CSS Modal cũ hoặc tạo mới
 
-// Thêm prop `remainingLeaveDays`
 const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
   const today = new Date().toISOString().split("T")[0];
-  const [ngayBatDau, setNgayBatDau] = useState(today);
-  const [ngayKetThuc, setNgayKetThuc] = useState(today);
-  const [soNgayNghi, setSoNgayNghi] = useState(1);
-  const [selectedReason, setSelectedReason] = useState("");
-  const [customReason, setCustomReason] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [formData, setFormData] = useState({
+    ngayBatDau: today,
+    ngayKetThuc: today,
+    soNgayNghi: 1,
+    lyDo: "",
+    customReason: "",
+    file: null,
+  });
   const [error, setError] = useState("");
 
   const predefinedReasons = [
     "Nghỉ ốm",
-    "Nghỉ việc gia đình",
     "Nghỉ phép năm",
+    "Nghỉ việc gia đình",
+    "Nghỉ chế độ (thai sản/cưới hỏi)",
     "Khác (ghi rõ lý do)",
   ];
 
-  // Tính toán số ngày nghỉ mỗi khi ngày bắt đầu/kết thúc thay đổi
+  // Hàm tính số ngày làm việc (trừ T7, CN)
+  const calculateBusinessDays = (startDate, endDate) => {
+    let count = 0;
+    let curDate = new Date(startDate);
+    const end = new Date(endDate);
+
+    while (curDate <= end) {
+      const dayOfWeek = curDate.getDay();
+      // 0: CN, 6: T7 -> Chỉ đếm từ thứ 2 (1) đến thứ 6 (5)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        count++;
+      }
+      curDate.setDate(curDate.getDate() + 1);
+    }
+    return count;
+  };
+
   useEffect(() => {
-    try {
+    const { ngayBatDau, ngayKetThuc } = formData;
+    if (ngayBatDau && ngayKetThuc) {
       const start = new Date(ngayBatDau);
       const end = new Date(ngayKetThuc);
 
       if (end < start) {
         setError("Ngày kết thúc không thể trước ngày bắt đầu.");
-        setSoNgayNghi(0);
-        return;
+        setFormData((prev) => ({ ...prev, soNgayNghi: 0 }));
+      } else {
+        // Tự động trừ T7/CN để khớp với logic chấm công backend
+        const days = calculateBusinessDays(start, end);
+        setFormData((prev) => ({ ...prev, soNgayNghi: days }));
+        setError("");
       }
-
-      // Tính số ngày (bao gồm cả ngày bắt đầu và kết thúc)
-      const timeDiff = end.getTime() - start.getTime();
-      const dayDiff = Math.round(timeDiff / (1000 * 60 * 60 * 24)) + 1;
-
-      setSoNgayNghi(dayDiff);
-      setError(""); // Xóa lỗi nếu ngày hợp lệ
-    } catch (e) {
-      setSoNgayNghi(0); // Lỗi nếu ngày không hợp lệ
     }
-  }, [ngayBatDau, ngayKetThuc]);
+  }, [formData.ngayBatDau, formData.ngayKetThuc]);
 
-  const handleReasonChange = (e) => {
-    setSelectedReason(e.target.value);
-    if (e.target.value !== "Khác (ghi rõ lý do)") {
-      setCustomReason(""); // Sửa lỗi: Cần gọi setCustomReason
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "file") {
+      setFormData((prev) => ({ ...prev, file: files[0] }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
-  };
-
-  const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
   };
 
   const handleSubmit = () => {
-    if (!ngayBatDau || !ngayKetThuc) {
-      setError("Vui lòng chọn ngày bắt đầu và kết thúc.");
-      return;
-    }
-    if (soNgayNghi <= 0) {
-      setError("Ngày kết thúc không thể trước ngày bắt đầu.");
+    if (formData.soNgayNghi <= 0) {
+      setError("Số ngày nghỉ không hợp lệ.");
       return;
     }
 
-    let finalReason = selectedReason;
-    if (selectedReason === "Khác (ghi rõ lý do)") {
-      if (!customReason.trim()) {
-        setError("Vui lòng điền lý do cụ thể.");
+    let finalReason = formData.lyDo;
+    if (formData.lyDo === "Khác (ghi rõ lý do)") {
+      if (!formData.customReason.trim()) {
+        setError("Vui lòng ghi rõ lý do.");
         return;
       }
-      finalReason = customReason.trim();
-    }
-
-    if (!finalReason) {
-      setError("Vui lòng chọn hoặc nhập lý do nghỉ.");
+      finalReason = formData.customReason;
+    } else if (!formData.lyDo) {
+      setError("Vui lòng chọn lý do.");
       return;
     }
 
-    // Kiểm tra số ngày phép còn lại (chỉ khi chọn "Nghỉ phép năm")
-    if (selectedReason === "Nghỉ phép năm") {
-      if (remainingLeaveDays === undefined) {
-        setError("Không thể lấy được số ngày phép. Vui lòng thử lại.");
-        return;
-      }
-      if (soNgayNghi > remainingLeaveDays) {
-        setError(
-          `Bạn chỉ còn ${remainingLeaveDays} ngày phép. Không thể xin nghỉ ${soNgayNghi} ngày.`
-        );
+    // Check phép năm
+    if (formData.lyDo === "Nghỉ phép năm") {
+      if (
+        remainingLeaveDays !== undefined &&
+        formData.soNgayNghi > remainingLeaveDays
+      ) {
+        setError(`Số ngày phép còn lại (${remainingLeaveDays}) không đủ.`);
         return;
       }
     }
 
-    setError("");
-
-    // Gửi object chứa tất cả dữ liệu về cho component cha (EmployeeHomePage)
-    onSave({
-      ngayBatDau,
-      ngayKetThuc,
+    // Dữ liệu chuẩn bị gửi đi
+    const submissionData = {
+      ngayBatDau: formData.ngayBatDau,
+      ngayKetThuc: formData.ngayKetThuc,
+      soNgayNghi: formData.soNgayNghi,
       lyDo: finalReason,
-      soNgayNghi,
-      file: selectedFile,
-    });
+      file: formData.file,
+    };
+
+    onSave(submissionData);
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2>Đăng ký nghỉ phép</h2>
+        <div className="modal-header">
+          <h2>Đăng ký nghỉ phép</h2>
+          <span className="close-icon" onClick={onCancel}>
+            &times;
+          </span>
+        </div>
 
         {error && <div className="modal-error">{error}</div>}
 
-        {/* Hiển thị số ngày phép còn lại */}
         <div
           className="leave-balance-info"
-          style={{
-            marginBottom: "15px",
-            color: "#17a2b8",
-            fontWeight: "bold",
-          }}
+          style={{ color: "#0e7c7b", marginBottom: "15px" }}
         >
-          Số ngày phép năm còn lại:
-          <strong>
-            {remainingLeaveDays !== undefined
-              ? ` ${remainingLeaveDays} ngày`
-              : "Đang tải..."}
-          </strong>
+          Phép năm còn lại: <strong>{remainingLeaveDays ?? "..."}</strong> ngày
         </div>
 
-        {/* Form chọn ngày */}
         <div className="form-group-row">
           <div className="form-group">
-            <label htmlFor="leave-start-date">Từ ngày (*)</label>
+            <label>Từ ngày (*)</label>
             <input
-              id="leave-start-date"
               type="date"
-              value={ngayBatDau}
-              onChange={(e) => setNgayBatDau(e.target.value)}
-              min={today} // Không cho chọn ngày quá khứ
+              name="ngayBatDau"
+              value={formData.ngayBatDau}
+              onChange={handleChange}
+              min={today}
             />
           </div>
           <div className="form-group">
-            <label htmlFor="leave-end-date">Đến ngày (*)</label>
+            <label>Đến ngày (*)</label>
             <input
-              id="leave-end-date"
               type="date"
-              value={ngayKetThuc}
-              onChange={(e) => setNgayKetThuc(e.target.value)}
-              min={ngayBatDau} // Không cho chọn ngày trước ngày bắt đầu
+              name="ngayKetThuc"
+              value={formData.ngayKetThuc}
+              onChange={handleChange}
+              min={formData.ngayBatDau}
             />
           </div>
         </div>
 
-        {/* Hiển thị số ngày đã tính */}
         <div className="form-group">
-          <label>Tổng số ngày nghỉ:</label>
+          <label>Số ngày nghỉ (đã trừ T7/CN):</label>
           <input
             type="text"
-            value={`${soNgayNghi} ngày`}
-            disabled // Tự động tính, không cho sửa
-            style={{ backgroundColor: "#f4f4f4", fontWeight: "bold" }}
+            value={formData.soNgayNghi}
+            disabled
+            style={{ backgroundColor: "#f0f0f0", fontWeight: "bold" }}
           />
         </div>
 
-        {/* Chọn lý do */}
         <div className="form-group">
-          <label htmlFor="leave-reason">Lý do nghỉ (*)</label>
-          <select
-            id="leave-reason"
-            value={selectedReason}
-            onChange={handleReasonChange}
-          >
-            <option value="" disabled>
-              -- Chọn lý do --
-            </option>
-            {predefinedReasons.map((reason) => (
-              <option key={reason} value={reason}>
-                {reason}
+          <label>Lý do nghỉ (*)</label>
+          <select name="lyDo" value={formData.lyDo} onChange={handleChange}>
+            <option value="">-- Chọn lý do --</option>
+            {predefinedReasons.map((r) => (
+              <option key={r} value={r}>
+                {r}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Lý do tùy chỉnh */}
-        {selectedReason === "Khác (ghi rõ lý do)" && (
+        {formData.lyDo === "Khác (ghi rõ lý do)" && (
           <div className="form-group">
-            <label htmlFor="custom-reason">Vui lòng ghi rõ lý do (*)</label>
             <textarea
-              id="custom-reason"
-              rows="3"
+              name="customReason"
               placeholder="Nhập lý do cụ thể..."
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-            ></textarea>
+              value={formData.customReason}
+              onChange={handleChange}
+            />
           </div>
         )}
 
-        {/* Tệp đính kèm */}
         <div className="form-group">
-          <label htmlFor="leave-attachment">Tệp đính kèm (nếu có)</label>
-          <input
-            id="leave-attachment"
-            type="file"
-            onChange={handleFileChange}
-          />
+          <label>Tệp đính kèm (nếu có)</label>
+          <input type="file" name="file" onChange={handleChange} />
         </div>
 
-        {/* Nút bấm */}
         <div className="modal-actions">
           <button className="cancel-btn" onClick={onCancel}>
             Hủy

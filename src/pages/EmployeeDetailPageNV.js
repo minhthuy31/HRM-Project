@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
-import "../styles/EmployeeDetailPageNV.css";
+import "react-datepicker/dist/react-datepicker.css";
+import "../styles/EmployeeDetailPage.css";
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -9,136 +10,253 @@ const getImageUrl = (path) => {
 };
 
 const EmployeeDetailPageNV = () => {
-  // Nhận dữ liệu employee từ context của Outlet
+  // Lấy dữ liệu từ Context
   const { employee } = useOutletContext();
+  const [activeTab, setActiveTab] = useState("personal");
+
+  if (!employee) {
+    return <div style={{ padding: "20px" }}>Đang tải thông tin...</div>;
+  }
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "";
     return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
-  if (!employee) {
-    return <p>Không tìm thấy thông tin nhân viên.</p>;
-  }
+  // Helper format tiền tệ
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null) return "---";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
 
-  return (
-    <div className="employee-self-container">
-      {/* === HEADER === */}
-      <div className="self-header">
-        {employee.hinhAnh ? (
-          <img
-            src={getImageUrl(employee.hinhAnh)}
-            alt={employee.hoTen}
-            className="self-avatar"
-          />
-        ) : (
-          <FaUserCircle size={110} className="self-avatar-placeholder" />
-        )}
+  const tabs = [
+    { id: "personal", label: "Thông tin cá nhân" },
+    { id: "identity", label: "Giấy tờ tùy thân" },
+    { id: "contact", label: "Liên hệ" },
+    { id: "job", label: "Quá trình làm việc & HĐ" },
+    { id: "bank", label: "Thông tin tài khoản" },
+    { id: "education", label: "Trình độ học vấn" },
+    { id: "insurance", label: "Bảo hiểm" },
+  ];
 
-        <div className="self-header-info">
-          <h1>{employee.hoTen}</h1>
-          <p className="self-employee-code">
-            {employee.maNhanVien} -{" "}
-            <span
-              className={
-                employee.trangThai ? "status-active" : "status-inactive"
-              }
-            >
-              {employee.trangThai ? "Đang hoạt động" : "Đã nghỉ việc"}
-            </span>
-          </p>
-          <p className="self-position">
-            {employee.tenChucVu} tại {employee.tenPhongBan}
-          </p>
+  // Helper render field
+  const renderField = (label, value) => (
+    <div className="form-group">
+      <label>{label}</label>
+      <span className="view-field">{value || "---"}</span>
+    </div>
+  );
+
+  // --- CÁC PHẦN RENDER NỘI DUNG ---
+  const renderPersonal = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Thông tin cơ bản</div>
+      <div style={{ display: "flex", gap: "25px" }}>
+        <div className="avatar-section">
+          <div className="avatar-preview">
+            {employee.hinhAnh ? (
+              <img src={getImageUrl(employee.hinhAnh)} alt="Avatar" />
+            ) : (
+              <FaUserCircle size={80} color="#ccc" />
+            )}
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div className="form-grid grid-2">
+            {renderField("Mã nhân viên", employee.maNhanVien)}
+            {renderField("Họ và tên", employee.hoTen)}
+            {renderField("Phòng ban", employee.tenPhongBan)}
+            {renderField("Ngày sinh", formatDate(employee.ngaySinh))}
+          </div>
         </div>
       </div>
+      <div className="form-section-title">Chi tiết cá nhân</div>
+      <div className="form-grid grid-3">
+        {renderField(
+          "Giới tính",
+          employee.gioiTinh === 1
+            ? "Nam"
+            : employee.gioiTinh === 0
+            ? "Nữ"
+            : "Khác"
+        )}
+        {renderField("Hôn nhân", employee.tinhTrangHonNhan)}
+        {renderField("Dân tộc", employee.danToc)}
+        {renderField("Tôn giáo", employee.tonGiao)}
+        {renderField("Quốc tịch", employee.quocTich)}
+        {renderField("Nơi sinh", employee.noiSinh)}
+        {renderField("Quê quán", employee.queQuan)}
+      </div>
+    </div>
+  );
 
-      {/* === NỘI DUNG CHÍNH – GRID KHÔNG NHẢY CÓC === */}
-      <div className="self-info-wrapper">
-        {/* ─────── THÔNG TIN CÁ NHÂN ─────── */}
-        <div className="self-section">
-          <h3 className="self-section-title">Thông tin cá nhân</h3>
-          <div className="self-info-grid">
-            <div className="self-info-item">
-              <label>Ngày sinh:</label>
-              <span>{formatDate(employee.ngaySinh)}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Giới tính:</label>
-              <span>{employee.gioiTinh === 1 ? "Nam" : "Nữ"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Dân tộc:</label>
-              <span>{employee.danToc || "N/A"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Hôn nhân:</label>
-              <span>{employee.tinhTrangHonNhan || "N/A"}</span>
-            </div>
+  const renderIdentity = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Thẻ CCCD / CMND</div>
+      <div className="form-grid grid-2">
+        {renderField("Số CCCD", employee.cccd)}
+        {renderField("Nơi cấp", employee.noiCapCCCD)}
+        {renderField("Ngày cấp", formatDate(employee.ngayCapCCCD))}
+        {renderField("Ngày hết hạn", formatDate(employee.ngayHetHanCCCD))}
+      </div>
+    </div>
+  );
 
-            <div className="self-info-item span-2">
-              <label>Quê quán:</label>
-              <span>{employee.queQuan || "N/A"}</span>
-            </div>
-            <div className="self-info-item span-2">
-              <label>Thường trú:</label>
-              <span>{employee.diaChiThuongTru || "N/A"}</span>
-            </div>
-          </div>
+  const renderContact = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Liên hệ chính</div>
+      <div className="form-grid grid-2">
+        {renderField("Email", employee.email)}
+        {renderField("Số điện thoại", employee.sdt_NhanVien)}
+      </div>
+      <div className="form-section-title">Địa chỉ</div>
+      <div className="form-grid grid-1">
+        {renderField("Địa chỉ chi tiết", employee.diaChiThuongTru)}
+      </div>
+    </div>
+  );
+
+  // 4. Công việc (CẬP NHẬT: phuCap -> luongTroCap)
+  const renderJob = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Quản lý</div>
+      <div className="form-grid grid-2">
+        {renderField("Quản lý trực tiếp", employee.tenQuanLyTrucTiep)}
+        {renderField("Ngày vào làm", formatDate(employee.ngayVaoLam))}
+      </div>
+      <div className="form-section-title">Công việc</div>
+      <div className="form-grid grid-3">
+        {renderField("Phòng ban", employee.tenPhongBan)}
+        {renderField("Chức vụ", employee.tenChucVu)}
+        {renderField("Loại nhân viên", employee.loaiNhanVien)}
+      </div>
+      <div className="form-section-title">Hợp đồng & Lương</div>
+      <div className="form-grid grid-3">
+        {renderField("Số HĐ", employee.soHopDong)}
+
+        {/* --- ĐÃ SỬA: Hiển thị đúng luongTroCap --- */}
+        {renderField("Lương CB", formatCurrency(employee.luongCoBan))}
+        {renderField("Lương trợ cấp", formatCurrency(employee.luongTroCap))}
+      </div>
+    </div>
+  );
+
+  const renderBank = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Tài khoản ngân hàng</div>
+      <div className="form-grid grid-2">
+        {renderField("Tên ngân hàng", employee.tenNganHang)}
+        {renderField("Số tài khoản", employee.soTaiKhoanNH)}
+      </div>
+    </div>
+  );
+  const renderEducation = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Học vấn</div>
+      <div className="form-grid grid-2">
+        {renderField("Trình độ", employee.tenTrinhDoHocVan)}
+        {renderField("Chuyên ngành", employee.tenChuyenNganh)}
+      </div>
+    </div>
+  );
+  const renderInsurance = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Bảo hiểm</div>
+      <div className="form-grid grid-2">
+        {renderField("Số BHYT", employee.soBHYT)}
+        {renderField("Số BHXH", employee.soBHXH)}
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "personal":
+        return renderPersonal();
+      case "identity":
+        return renderIdentity();
+      case "contact":
+        return renderContact();
+      case "job":
+        return renderJob();
+      case "bank":
+        return renderBank();
+      case "education":
+        return renderEducation();
+      case "insurance":
+        return renderInsurance();
+      default:
+        return null;
+    }
+  };
+
+  // --- STYLES CHO MENU NGANG ---
+  const horizontalMenuContainerStyle = {
+    display: "flex",
+    flexDirection: "row",
+    overflowX: "auto",
+    width: "100%",
+    backgroundColor: "#f8f9fa",
+    borderBottom: "1px solid #dce0e4",
+    padding: "0",
+  };
+
+  const horizontalMenuItemStyle = (isActive) => ({
+    padding: "15px 25px",
+    cursor: "pointer",
+    fontSize: "15px",
+    fontWeight: isActive ? "700" : "500",
+    color: isActive ? "#0e7c7b" : "#55606d",
+    borderBottom: isActive ? "3px solid #0e7c7b" : "3px solid transparent",
+    borderLeft: "none",
+    backgroundColor: isActive ? "#fff" : "transparent",
+    whiteSpace: "nowrap",
+    transition: "all 0.2s",
+  });
+
+  return (
+    <div
+      className="emp-detail-page"
+      style={{ padding: "0", height: "100%", backgroundColor: "transparent" }}
+    >
+      <div
+        className="emp-layout-container"
+        style={{
+          height: "100%",
+          borderRadius: "8px",
+          border: "none",
+          boxShadow: "none",
+        }}
+      >
+        <div className="emp-layout-header">
+          <h1>Hồ sơ của tôi: {employee.hoTen}</h1>
+          <span
+            className={`emp-layout-status ${
+              employee.trangThai ? "status-active" : "status-inactive"
+            }`}
+          >
+            {employee.trangThai ? "Đang hoạt động" : "Đã nghỉ việc"}
+          </span>
         </div>
 
-        {/* ─────── THÔNG TIN ĐỊNH DANH & LIÊN LẠC ─────── */}
-        <div className="self-section">
-          <h3 className="self-section-title">Thông tin định danh & Liên lạc</h3>
-          <div className="self-info-grid">
-            <div className="self-info-item">
-              <label>CCCD:</label>
-              <span>{employee.cccd || "N/A"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Ngày cấp:</label>
-              <span>{formatDate(employee.ngayCapCCCD)}</span>
-            </div>
-            <div className="self-info-item span-2">
-              <label>Nơi cấp:</label>
-              <span>{employee.noiCapCCCD || "N/A"}</span>
-            </div>
-
-            <div className="self-info-item">
-              <label>Điện thoại:</label>
-              <span>{employee.sdt_NhanVien || "N/A"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Email:</label>
-              <span>{employee.email || "N/A"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Tài khoản NH:</label>
-              <span>{employee.soTaiKhoanNH || "N/A"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Ngân hàng:</label>
-              <span>{employee.tenNganHang || "N/A"}</span>
-            </div>
+        <div className="emp-layout-body" style={{ flexDirection: "column" }}>
+          <div style={horizontalMenuContainerStyle}>
+            {tabs.map((tab) => (
+              <div
+                key={tab.id}
+                style={horizontalMenuItemStyle(activeTab === tab.id)}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </div>
+            ))}
           </div>
-        </div>
 
-        {/* ─────── THÔNG TIN CÔNG VIỆC ─────── */}
-        <div className="self-section">
-          <h3 className="self-section-title">Thông tin công việc</h3>
-          <div className="self-info-grid">
-            <div className="self-info-item">
-              <label>Chuyên ngành:</label>
-              <span>{employee.tenChuyenNganh || "N/A"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Trình độ học vấn:</label>
-              <span>{employee.tenTrinhDoHocVan || "N/A"}</span>
-            </div>
-            <div className="self-info-item">
-              <label>Loại nhân viên:</label>
-              <span>{employee.loaiNhanVien || "N/A"}</span>
-            </div>
+          <div className="emp-main" style={{ padding: "30px" }}>
+            {renderContent()}
           </div>
         </div>
       </div>

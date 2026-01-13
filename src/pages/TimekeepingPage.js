@@ -11,7 +11,7 @@ const TimekeepingPage = () => {
   const [employees, setEmployees] = useState([]);
   const [attendance, setAttendance] = useState({});
   const [loading, setLoading] = useState(true);
-  const [summaries, setSummaries] = useState({}); // State mới cho thống kê
+  const [summaries, setSummaries] = useState({});
 
   // State cho việc chỉnh sửa và lựa chọn
   const [editingCell, setEditingCell] = useState(null); // Sửa 1 ô

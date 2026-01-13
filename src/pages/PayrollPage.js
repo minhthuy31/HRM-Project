@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
-import { FaChevronLeft, FaChevronRight, FaFileExcel } from "react-icons/fa";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaFileExcel,
+  FaSave,
+} from "react-icons/fa";
 import * as XLSX from "xlsx";
 import "../styles/PayrollPage.css";
 
@@ -9,57 +14,33 @@ const PayrollPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [payrolls, setPayrolls] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
+  // 1. TẢI DỮ LIỆU
   const fetchData = useCallback(async (date) => {
     setLoading(true);
-    setError("");
     try {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
+      const response = await api.get(`/BangLuong?year=${year}&month=${month}`);
 
-      const [empRes, attendanceRes, savedPayrollRes] = await Promise.all([
-        api.get("/NhanVien?TrangThai=true"),
-        api.get(`/ChamCong?year=${year}&month=${month}`),
-        api.get(`/BangLuong?year=${year}&month=${month}`),
-      ]);
-
-      const employees = empRes.data;
-      const { summaries } = attendanceRes.data;
-      const savedPayrolls = savedPayrollRes.data || [];
-
-      // Tạo map để tra cứu nhanh hơn
-      const savedPayrollMap = new Map();
-      savedPayrolls.forEach((p) => savedPayrollMap.set(p.maNhanVien, p));
-
-      const payrollData = employees.map((emp) => {
-        const summary = summaries[emp.maNhanVien] || {
-          tongCong: 0,
-          nghiCoPhep: 0,
-          lamNuaNgay: 0,
-          nghiKhongPhep: 0,
-        };
-
-        const savedRecord = savedPayrollMap.get(emp.maNhanVien);
-
-        const luongCoBan = savedRecord
-          ? savedRecord.luongCoBan
-          : emp.luongCoBan || 0;
-
-        const calculatedSalary = (summary.tongCong * luongCoBan) / 26;
-
-        return {
-          ...emp,
-          luongCoBan: luongCoBan,
-          summary,
-          calculatedSalary,
-        };
-      });
-
-      setPayrolls(payrollData);
+      const mappedData = response.data.map((item) => ({
+        ...item,
+        luongCoBan: item.luongCoBan || 0,
+        tongPhuCap: item.tongPhuCap || 0,
+        tongNgayCong: item.tongNgayCong || 0,
+        tongGioOT: item.tongGioOT || 0,
+        khoanTruKhac: item.khoanTruKhac || 0,
+        // Dữ liệu chi tiết
+        nghiCoPhep: item.nghiCoPhep || 0,
+        nghiKhongPhep: item.nghiKhongPhep || 0,
+        lamNuaNgay: item.lamNuaNgay || 0,
+        khauTruBHXH: item.khauTruBHXH || 0,
+        khauTruBHYT: item.khauTruBHYT || 0,
+        khauTruBHTN: item.khauTruBHTN || 0,
+      }));
+      setPayrolls(mappedData);
     } catch (err) {
-      console.error("Lỗi tải dữ liệu bảng lương:", err);
-      setError("Không thể tải dữ liệu. Vui lòng thử lại.");
+      alert("Lỗi tải dữ liệu.");
     } finally {
       setLoading(false);
     }
@@ -69,109 +50,91 @@ const PayrollPage = () => {
     fetchData(currentDate);
   }, [currentDate, fetchData]);
 
-  const changeMonth = (offset) => {
+  const changeMonth = (offset) =>
     setCurrentDate(
       (prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1)
     );
+
+  // 2. TÍNH TOÁN LẠI (CLIENT-SIDE)
+  const recalculateRow = (record) => {
+    const parse = (val) =>
+      parseFloat(val?.toString().replace(/[^0-9.-]+/g, "")) || 0;
+    const luongCoBan = parse(record.luongCoBan);
+    const phuCap = parse(record.tongPhuCap);
+    const khoanTruKhac = parse(record.khoanTruKhac);
+    const ngayCong = parseFloat(record.tongNgayCong) || 0;
+    const gioOT = parseFloat(record.tongGioOT) || 0;
+
+    const luongChinh = (luongCoBan / 26) * ngayCong;
+    const luongOT = (luongCoBan / 26 / 8) * 1.5 * gioOT;
+    const bhxh = luongCoBan * 0.08;
+    const bhyt = luongCoBan * 0.015;
+    const bhtn = luongCoBan * 0.01;
+
+    const tongThuNhap = luongChinh + luongOT + phuCap;
+    const thucLanh = tongThuNhap - (bhxh + bhyt + bhtn) - khoanTruKhac;
+
+    return {
+      ...record,
+      luongChinh: Math.round(luongChinh),
+      luongOT: Math.round(luongOT),
+      khauTruBHXH: Math.round(bhxh),
+      khauTruBHYT: Math.round(bhyt),
+      khauTruBHTN: Math.round(bhtn),
+      tongThuNhap: Math.round(tongThuNhap),
+      thucLanh: Math.round(thucLanh),
+      khoanTruKhac: khoanTruKhac,
+    };
   };
 
-  const handleSalaryChange = (maNhanVien, newLuongCoBan) => {
-    setPayrolls((prevPayrolls) =>
-      prevPayrolls.map((p) => {
-        if (p.maNhanVien === maNhanVien) {
-          const luongCoBan = parseFloat(newLuongCoBan) || 0;
-          const calculatedSalary = (p.summary.tongCong * luongCoBan) / 26;
-          return { ...p, luongCoBan, calculatedSalary };
-        }
-        return p;
-      })
+  const handleCurrencyInput = (maNhanVien, value) => {
+    const numericValue = value.replace(/\D/g, "");
+    setPayrolls((prev) =>
+      prev.map((p) =>
+        p.maNhanVien === maNhanVien
+          ? recalculateRow({ ...p, khoanTruKhac: numericValue })
+          : p
+      )
     );
   };
 
+  const formatMoney = (val) => new Intl.NumberFormat("vi-VN").format(val || 0);
+
+  // 3. LƯU DỮ LIỆU
   const handleSavePayroll = async () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1;
-
-    if (
-      !window.confirm(
-        `Bạn có chắc muốn chốt và lưu bảng lương cho tháng ${month}/${year}?`
-      )
-    ) {
-      return;
-    }
-
-    setLoading(true);
-    const payload = payrolls.map((p) => ({
-      maNhanVien: p.maNhanVien,
-      thang: month,
-      nam: year,
-      luongCoBan: p.luongCoBan || 0,
-      tongNgayCong: p.summary.tongCong,
-      luongThucNhan: p.calculatedSalary,
-    }));
-
+    if (!window.confirm("Xác nhận lưu bảng lương?")) return;
     try {
+      const payload = payrolls.map((p) => ({
+        ...p,
+        khoanTruKhac:
+          parseFloat(p.khoanTruKhac.toString().replace(/\D/g, "")) || 0,
+      }));
       await api.post("/BangLuong/save", payload);
-      alert(`Đã lưu thành công bảng lương tháng ${month}/${year}!`);
-      // Tải lại dữ liệu sau khi lưu
+      alert("Lưu thành công!");
       fetchData(currentDate);
     } catch (err) {
-      console.error("Lỗi lưu bảng lương:", err);
-      alert("Đã xảy ra lỗi khi lưu bảng lương.");
-    } finally {
-      setLoading(false);
+      alert("Lỗi khi lưu.");
     }
   };
 
   const handleExportExcel = () => {
-    const dataToExport = payrolls.map((p) => ({
-      "Mã Nhân Viên": p.maNhanVien,
-      "Họ Tên": p.hoTen,
-      "Chức Vụ": p.tenChucVu, // <-- ĐÃ THÊM
-      "Tổng Công": p.summary.tongCong.toFixed(1),
-      "Nghỉ Phép": p.summary.nghiCoPhep,
-      "Nửa Ngày": p.summary.lamNuaNgay,
-      "Không Phép": p.summary.nghiKhongPhep,
-      "Lương Cơ Bản": p.luongCoBan,
-      "Lương Thực Tế": p.calculatedSalary,
+    const data = payrolls.map((p) => ({
+      "Mã NV": p.maNhanVien,
+      "Họ Tên": p.nhanVien?.hoTen,
+      "Lương CB": p.luongCoBan,
+      "Phụ Cấp": p.tongPhuCap,
+      "Tổng Công": p.tongNgayCong,
+      "Nghỉ Phép": p.nghiCoPhep,
+      "Không Phép": p.nghiKhongPhep,
+      BHXH: p.khauTruBHXH,
+      BHYT: p.khauTruBHYT,
+      BHTN: p.khauTruBHTN,
+      "Thực Lĩnh": p.thucLanh,
     }));
-
-    // Căn chỉnh độ rộng cột
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const cols = [
-      { wch: 15 }, // Mã Nhân Viên
-      { wch: 25 }, // Họ Tên
-      { wch: 20 }, // Chức Vụ (MỚI)
-      { wch: 12 }, // Tổng Công
-      { wch: 12 }, // Nghỉ Phép
-      { wch: 12 }, // Nửa Ngày
-      { wch: 12 }, // Không Phép
-      { wch: 18 }, // Lương Cơ Bản
-      { wch: 18 }, // Lương Thực Tế
-    ];
-    ws["!cols"] = cols;
-
-    // Tạo workbook
+    const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(
-      wb,
-      ws,
-      `BangLuong_T${currentDate.getMonth() + 1}`
-    );
-
-    // Tạo file
-    const fileName = `BangLuong_T${
-      currentDate.getMonth() + 1
-    }_${currentDate.getFullYear()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-  };
-
-  // Hàm định dạng tiền tệ
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
+    XLSX.utils.book_append_sheet(wb, ws, "BangLuong");
+    XLSX.writeFile(wb, "BangLuong.xlsx");
   };
 
   return (
@@ -180,83 +143,148 @@ const PayrollPage = () => {
         <h1>Quản lý Lương</h1>
         <div className="payroll-header">
           <div className="month-navigator">
-            <button onClick={() => changeMonth(-1)} disabled={loading}>
+            <button onClick={() => changeMonth(-1)}>
               <FaChevronLeft />
             </button>
-            <h2>{`Tháng ${
-              currentDate.getMonth() + 1
-            }, ${currentDate.getFullYear()}`}</h2>
-            <button onClick={() => changeMonth(1)} disabled={loading}>
+            <h2>
+              Tháng {currentDate.getMonth() + 1}/{currentDate.getFullYear()}
+            </h2>
+            <button onClick={() => changeMonth(1)}>
               <FaChevronRight />
             </button>
           </div>
           <div className="header-actions">
-            <button
-              className="export-excel-btn"
-              onClick={handleExportExcel}
-              disabled={loading || payrolls.length === 0}
-            >
-              <FaFileExcel /> Xuất Excel
+            <button className="export-excel-btn" onClick={handleExportExcel}>
+              <FaFileExcel /> Xuất
             </button>
-            <button
-              className="save-payroll-btn"
-              onClick={handleSavePayroll}
-              disabled={loading}
-            >
-              Chốt Lương Tháng {currentDate.getMonth() + 1}
+            <button className="save-payroll-btn" onClick={handleSavePayroll}>
+              <FaSave /> Lưu
             </button>
           </div>
         </div>
 
-        {loading && <p>Đang tải dữ liệu...</p>}
-        {error && <p className="error-message">{error}</p>}
-
-        {!loading && !error && (
-          <div className="payroll-table-container">
-            <table className="payroll-table">
-              <thead>
-                <tr>
-                  <th>Nhân viên</th>
-                  <th>Tổng công</th>
-                  <th>Nghỉ phép</th>
-                  <th>Nửa ngày</th>
-                  <th>Không phép</th>
-                  <th>Lương cơ bản</th>
-                  <th>Lương thực tế</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payrolls.map((p) => (
-                  <tr key={p.maNhanVien}>
-                    <td>
-                      <div className="employee-info">
-                        <strong>{p.hoTen}</strong>
-                        <span>{p.tenChucVu}</span>
-                        <span>{p.maNhanVien}</span>
-                      </div>
-                    </td>
-                    <td>{p.summary.tongCong.toFixed(1)}</td>
-                    <td>{p.summary.nghiCoPhep}</td>
-                    <td>{p.summary.lamNuaNgay}</td>
-                    <td>{p.summary.nghiKhongPhep}</td>
-                    <td>
-                      <input
-                        type="number"
-                        className="salary-input"
-                        value={p.luongCoBan || ""}
-                        onChange={(e) =>
-                          handleSalaryChange(p.maNhanVien, e.target.value)
-                        }
-                        placeholder="Nhập lương..."
-                      />
-                    </td>
-                    <td className="final-salary">
-                      {formatCurrency(p.calculatedSalary)}
-                    </td>
+        {loading ? (
+          <p>Đang tải...</p>
+        ) : (
+          <div className="payroll-table-wrapper">
+            <div className="payroll-table-scroll">
+              <table className="payroll-table">
+                <thead>
+                  {/* GROUP HEADER */}
+                  <tr>
+                    <th rowSpan={2} className="sticky-col first-col">
+                      Nhân viên
+                    </th>
+                    <th colSpan={3} className="group-header bg-gray">
+                      Thu Nhập Cố Định
+                    </th>
+                    <th colSpan={5} className="group-header bg-blue-light">
+                      Chi Tiết Chấm Công
+                    </th>
+                    <th colSpan={3} className="group-header bg-green-light">
+                      Thu Nhập Biến Đổi
+                    </th>
+                    <th colSpan={4} className="group-header bg-red-light">
+                      Khấu Trừ & Bảo Hiểm
+                    </th>
+                    <th rowSpan={2} className="sticky-col last-col">
+                      Thực Lĩnh
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                  {/* DETAIL HEADER */}
+                  <tr>
+                    <th className="sub-th">Lương CB</th>
+                    <th className="sub-th">Phụ Cấp</th>
+                    <th className="sub-th">Tổng CĐ</th>
+                    {/* Tách cột chấm công */}
+                    <th className="sub-th highlight-blue">Tổng Công</th>
+                    <th className="sub-th">Nghỉ Phép</th>
+                    <th className="sub-th">Không Phép</th>
+                    <th className="sub-th">Nửa Ngày</th>
+                    <th className="sub-th highlight-purple">Giờ OT</th>
+                    {/* Biến đổi */}
+                    <th className="sub-th">Lương Chính</th>
+                    <th className="sub-th">Lương OT</th>
+                    <th className="sub-th highlight-green">Tổng TN</th>
+                    {/* Tách cột bảo hiểm */}
+                    <th className="sub-th">BHXH (8%)</th>
+                    <th className="sub-th">BHYT (1.5%)</th>
+                    <th className="sub-th">BHTN (1%)</th>
+                    <th className="sub-th bg-yellow-light">Khác (Sửa)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payrolls.map((p) => (
+                    <tr key={p.maNhanVien}>
+                      <td className="sticky-col first-col">
+                        <div className="employee-info">
+                          <strong>{p.nhanVien?.hoTen}</strong>
+                          <span>{p.maNhanVien}</span>
+                        </div>
+                      </td>
+                      <td className="text-right">
+                        {formatMoney(p.luongCoBan)}
+                      </td>
+                      <td className="text-right">
+                        {formatMoney(p.tongPhuCap)}
+                      </td>
+                      <td className="text-right text-muted">
+                        {formatMoney((p.luongCoBan || 0) + (p.tongPhuCap || 0))}
+                      </td>
+
+                      {/* Cột chấm công tách biệt */}
+                      <td className="text-center font-bold text-blue bg-blue-fade">
+                        {p.tongNgayCong}
+                      </td>
+                      <td className="text-center text-orange">
+                        {p.nghiCoPhep}
+                      </td>
+                      <td className="text-center text-red font-bold">
+                        {p.nghiKhongPhep}
+                      </td>
+                      <td className="text-center text-gray">{p.lamNuaNgay}</td>
+                      <td className="text-center font-bold text-purple">
+                        {p.tongGioOT}
+                      </td>
+
+                      <td className="text-right">
+                        {formatMoney(p.luongChinh)}
+                      </td>
+                      <td className="text-right">{formatMoney(p.luongOT)}</td>
+                      <td className="text-right font-bold text-green bg-green-fade">
+                        {formatMoney(p.tongThuNhap)}
+                      </td>
+
+                      {/* Cột bảo hiểm tách biệt */}
+                      <td className="text-right text-sm">
+                        {formatMoney(p.khauTruBHXH)}
+                      </td>
+                      <td className="text-right text-sm">
+                        {formatMoney(p.khauTruBHYT)}
+                      </td>
+                      <td className="text-right text-sm">
+                        {formatMoney(p.khauTruBHTN)}
+                      </td>
+                      <td className="bg-yellow-fade">
+                        <input
+                          className="salary-input"
+                          value={
+                            p.khoanTruKhac ? formatMoney(p.khoanTruKhac) : ""
+                          }
+                          onChange={(e) =>
+                            handleCurrencyInput(p.maNhanVien, e.target.value)
+                          }
+                          placeholder="0"
+                        />
+                      </td>
+                      <td className="sticky-col last-col final-salary text-right">
+                        {formatMoney(p.thucLanh)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
