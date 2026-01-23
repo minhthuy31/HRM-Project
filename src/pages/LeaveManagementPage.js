@@ -1,348 +1,461 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
-import "../styles/LeaveManagementPage.css";
+import { getUserFromToken } from "../utils/auth";
+import {
+  FaCheck,
+  FaTimes,
+  FaSearch,
+  FaFileDownload,
+  FaPlane,
+  FaClock,
+  FaUmbrellaBeach,
+} from "react-icons/fa";
+import "../styles/LeaveManagementPage.css"; // Reuse the CSS you provided
 
-const LeaveManagementPage = () => {
-  const [activeTab, setActiveTab] = useState("leave"); // 'leave', 'ot', 'trip'
+// --- Helper Functions ---
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString("vi-VN") : "-");
+const formatMoney = (v) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+    v || 0,
+  );
+const formatTime = (t) => (t ? t.substring(0, 5) : ""); // Format TimeSpan "HH:mm:ss" -> "HH:mm"
+
+const RequestManagementPage = () => {
+  // --- STATE MANAGEMENT ---
+  const [activeTab, setActiveTab] = useState("LEAVE"); // 'LEAVE', 'OT', 'TRIP'
   const [statusFilter, setStatusFilter] = useState("Chờ duyệt");
+  const [deptFilter, setDeptFilter] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [requests, setRequests] = useState([]);
+  const [data, setData] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // --- HÀM LOAD DỮ LIỆU THEO TAB ---
-  const fetchData = async () => {
+  // --- USER INFO & PERMISSIONS ---
+  const user = getUserFromToken();
+  const userRole = user?.role || user?.Role || "";
+
+  // Permission Logic:
+  // Approve/Reject: Only Manager (of that dept), Director, General Director
+  const canApprove = ["Trưởng phòng", "Giám đốc", "Tổng giám đốc"].includes(
+    userRole,
+  );
+  // View All & Filter Dept: Director, General Director, HR, Accountant
+  const canViewAllAndFilter = [
+    "Giám đốc",
+    "Tổng giám đốc",
+    "Kế toán trưởng",
+    "Nhân sự trưởng",
+  ].includes(userRole);
+
+  // --- LOAD DEPARTMENTS (For Filter) ---
+  useEffect(() => {
+    if (canViewAllAndFilter) {
+      api
+        .get("/PhongBan")
+        .then((res) => setDepartments(res.data))
+        .catch((err) => console.error("Error loading departments:", err));
+    }
+  }, [canViewAllAndFilter]);
+
+  // --- FETCH DATA FUNCTION ---
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const params = new URLSearchParams();
+      if (statusFilter) params.append("trangThai", statusFilter);
+      if (deptFilter) params.append("maPhongBan", deptFilter);
+      if (searchTerm) params.append("searchTerm", searchTerm);
+
       let endpoint = "";
       switch (activeTab) {
-        case "leave":
+        case "LEAVE":
           endpoint = "/DonNghiPhep";
           break;
-        case "ot":
+        case "OT":
           endpoint = "/DangKyOT";
           break;
-        case "trip":
+        case "TRIP":
           endpoint = "/DangKyCongTac";
-          break;
-        default:
-          endpoint = "/DonNghiPhep";
-      }
-
-      const response = await api.get(endpoint);
-      setRequests(response.data);
-    } catch (err) {
-      console.error("Lỗi tải dữ liệu:", err);
-      // alert("Không thể tải dữ liệu.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]); // Load lại khi chuyển Tab
-
-  // --- XỬ LÝ DUYỆT / TỪ CHỐI ---
-  const handleAction = async (id, action) => {
-    // action: 'approve' hoặc 'reject'
-    try {
-      let endpointPrefix = "";
-      switch (activeTab) {
-        case "leave":
-          endpointPrefix = "/DonNghiPhep";
-          break;
-        case "ot":
-          endpointPrefix = "/DangKyOT";
-          break;
-        case "trip":
-          endpointPrefix = "/DangKyCongTac";
           break;
         default:
           return;
       }
 
+      const response = await api.get(`${endpoint}?${params.toString()}`);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      // Optional: alert("Failed to load requests.");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, statusFilter, deptFilter, searchTerm]);
+
+  // Debounce search input to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => fetchData(), 500);
+    return () => clearTimeout(timer);
+  }, [fetchData]);
+
+  // --- HANDLE ACTIONS (APPROVE/REJECT) ---
+  const handleAction = async (id, action) => {
+    // action = 'approve' | 'reject'
+    const actionText = action === "approve" ? "DUYỆT" : "TỪ CHỐI";
+    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} đơn này?`)) return;
+
+    let endpointPrefix = "";
+    switch (activeTab) {
+      case "LEAVE":
+        endpointPrefix = "/DonNghiPhep";
+        break;
+      case "OT":
+        endpointPrefix = "/DangKyOT";
+        break;
+      case "TRIP":
+        endpointPrefix = "/DangKyCongTac";
+        break;
+      default:
+        return;
+    }
+
+    try {
       await api.post(`${endpointPrefix}/${action}/${id}`);
-      alert(action === "approve" ? "Đã duyệt đơn!" : "Đã từ chối đơn!");
-      fetchData(); // Reload lại bảng
-    } catch (err) {
-      const msg = err.response?.data?.message || "Lỗi xử lý đơn.";
+      // alert("Thao tác thành công!");
+      fetchData(); // Reload data after action
+    } catch (error) {
+      const msg =
+        error.response?.data?.message ||
+        "Có lỗi xảy ra (có thể do không đủ quyền hạn).";
       alert(msg);
     }
   };
 
-  // --- LỌC DỮ LIỆU THEO TRẠNG THÁI ---
-  const filteredData = useMemo(() => {
-    if (statusFilter === "Tất cả") return requests;
-    return requests.filter((r) => r.trangThai === statusFilter);
-  }, [requests, statusFilter]);
+  // --- RENDER TABLE ROW CONTENT ---
+  const renderTableBody = () => {
+    if (data.length === 0) {
+      return (
+        <tr>
+          <td colSpan="10" className="no-data">
+            Không có dữ liệu.
+          </td>
+        </tr>
+      );
+    }
 
-  const formatDate = (d) => (d ? new Date(d).toLocaleDateString("vi-VN") : "");
+    return data.map((item) => (
+      <tr key={item.id}>
+        {/* Column 1: Employee Info */}
+        <td>
+          <strong>{item.hoTenNhanVien}</strong>
+          <br />
+          <span style={{ fontSize: "12px", color: "#888" }}>
+            {item.maNhanVien}
+          </span>
+        </td>
 
-  // Format giờ cho OT (TimeSpan từ C# về là "HH:mm:ss")
-  const formatTime = (t) => (t ? t.substring(0, 5) : "");
+        {/* Column 2: Department */}
+        <td>{item.tenPhongBan || "---"}</td>
 
-  // Format tiền tệ VNĐ
-  const formatCurrency = (value) => {
-    if (value === undefined || value === null) return "";
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(value);
-  };
-
-  // --- COMPONENT TRẠNG THÁI ---
-  const StatusBadge = ({ status }) => {
-    const map = {
-      "Chờ duyệt": "pending",
-      "Đã duyệt": "approved",
-      "Từ chối": "rejected",
-    };
-    return (
-      <span className={`status-badge ${map[status] || "default"}`}>
-        {status}
-      </span>
-    );
-  };
-
-  // --- RENDER BẢNG THEO TAB ---
-  const renderTable = () => {
-    if (loading) return <p>Đang tải dữ liệu...</p>;
-    if (filteredData.length === 0)
-      return <p className="no-data">Không có dữ liệu.</p>;
-
-    return (
-      <div className="requests-table-container">
-        <table className="requests-table">
-          <thead>
-            <tr>
-              <th>Mã NV</th>
-              <th>Họ tên</th>
-              <th>Ngày gửi</th>
-
-              {/* Cột động theo từng loại đơn */}
-              {activeTab === "leave" && (
-                <>
-                  <th>Phép còn</th>
-                  <th>Từ ngày</th>
-                  <th>Đến ngày</th>
-                  <th>Số ngày</th>
-                  <th>Lý do</th>
-                  <th>Tệp</th>
-                </>
+        {/* Column 3+: Dynamic Content based on Tab */}
+        {activeTab === "LEAVE" && (
+          <>
+            <td className="reason-cell">{item.lyDo}</td>
+            <td>
+              {formatDate(item.ngayBatDau)} - {formatDate(item.ngayKetThuc)}
+            </td>
+            <td className="text-center font-bold">{item.soNgayNghi}</td>
+            <td>
+              {item.tepDinhKem ? (
+                <a
+                  href={`http://localhost:5260${item.tepDinhKem}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: "#0e7c7b",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  <FaFileDownload /> Xem
+                </a>
+              ) : (
+                "-"
               )}
-              {activeTab === "ot" && (
-                <>
-                  <th>Ngày làm</th>
-                  <th>Từ giờ</th>
-                  <th>Đến giờ</th>
-                  <th>Tổng giờ</th>
-                  <th>Lý do / Dự án</th>
-                </>
-              )}
-              {activeTab === "trip" && (
-                <>
-                  <th>Nơi công tác</th>
-                  <th>Thời gian</th>
-                  {/* <th>Phương tiện</th> */}
-                  <th>Mục đích</th>
-                  {/* --- CỘT MỚI CHO KINH PHÍ --- */}
-                  <th>Kinh phí DK</th>
-                  <th>Tạm ứng</th>
-                </>
-              )}
+            </td>
+            {/* Remaining Leave Days */}
+            <td
+              className="text-center"
+              style={{
+                color: item.remainingLeaveDays < 0 ? "red" : "green",
+                fontWeight: "bold",
+              }}
+            >
+              {item.remainingLeaveDays}
+            </td>
+          </>
+        )}
 
-              <th>Trạng thái</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map((item) => (
-              <tr key={item.id}>
-                <td>{item.maNhanVien}</td>
-                <td>{item.hoTenNhanVien || item.nhanVien?.hoTen || "---"}</td>
-                <td>{formatDate(item.ngayGuiDon)}</td>
+        {activeTab === "OT" && (
+          <>
+            <td className="reason-cell">{item.lyDo}</td>
+            <td>{formatDate(item.ngayLamThem)}</td>
+            <td>
+              {formatTime(item.gioBatDau)} - {formatTime(item.gioKetThuc)}
+            </td>
+            <td className="text-center font-bold" style={{ color: "#6f42c1" }}>
+              {item.soGio ? item.soGio.toFixed(1) : 0}h
+            </td>
+            <td>-</td>
+          </>
+        )}
 
-                {/* --- BODY: NGHỈ PHÉP --- */}
-                {activeTab === "leave" && (
-                  <>
-                    <td
-                      style={{
-                        fontWeight: "bold",
-                        color: item.remainingLeaveDays > 0 ? "green" : "red",
-                      }}
-                    >
-                      {item.remainingLeaveDays ?? "-"}
-                    </td>
-                    <td>{formatDate(item.ngayBatDau)}</td>
-                    <td>{formatDate(item.ngayKetThuc)}</td>
-                    <td>{item.soNgayNghi}</td>
-                    <td className="reason-cell">{item.lyDo}</td>
-                    <td>
-                      {item.tepDinhKem ? (
-                        <a
-                          href={`http://localhost:5260${item.tepDinhKem}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Xem
-                        </a>
-                      ) : (
-                        "Không"
-                      )}
-                    </td>
-                  </>
+        {activeTab === "TRIP" && (
+          <>
+            <td>
+              <div style={{ fontWeight: "500" }}>{item.noiCongTac}</div>
+              <div style={{ fontSize: "12px", color: "#666" }}>
+                {item.phuongTien}
+              </div>
+            </td>
+            <td className="reason-cell">{item.mucDich}</td>
+            <td>
+              {formatDate(item.ngayBatDau)} <br />
+              <small>đến</small> <br />
+              {formatDate(item.ngayKetThuc)}
+            </td>
+            <td>
+              <div style={{ fontSize: "12px" }}>
+                <div>DK: {formatMoney(item.kinhPhiDuKien)}</div>
+                <div style={{ color: "#d97706", fontWeight: "500" }}>
+                  Tạm ứng: {formatMoney(item.soTienTamUng)}
+                </div>
+                {item.lyDoTamUng && (
+                  <div style={{ fontStyle: "italic", color: "#888" }}>
+                    ({item.lyDoTamUng})
+                  </div>
                 )}
+              </div>
+            </td>
+            <td>-</td>
+          </>
+        )}
 
-                {/* --- BODY: OT --- */}
-                {activeTab === "ot" && (
-                  <>
-                    <td>{formatDate(item.ngayLamThem)}</td>
-                    <td>{formatTime(item.gioBatDau)}</td>
-                    <td>{formatTime(item.gioKetThuc)}</td>
-                    <td>{item.soGio ? item.soGio.toFixed(1) : 0}h</td>
-                    <td className="reason-cell">{item.lyDo}</td>
-                  </>
-                )}
+        {/* Status Column */}
+        <td>
+          <span
+            className={`status-badge ${
+              item.trangThai === "Chờ duyệt"
+                ? "pending"
+                : item.trangThai === "Đã duyệt"
+                  ? "approved"
+                  : "rejected"
+            }`}
+          >
+            {item.trangThai}
+          </span>
+        </td>
 
-                {/* --- BODY: CÔNG TÁC --- */}
-                {activeTab === "trip" && (
-                  <>
-                    <td style={{ fontWeight: 500 }}>
-                      {item.noiCongTac}
-                      <div style={{ fontSize: "0.85em", color: "#666" }}>
-                        ({item.phuongTien})
-                      </div>
-                    </td>
-                    <td>
-                      {formatDate(item.ngayBatDau)} <br />
-                      <span style={{ fontSize: "0.85em", color: "#666" }}>
-                        đến
-                      </span>{" "}
-                      {formatDate(item.ngayKetThuc)}
-                    </td>
-                    {/* <td>{item.phuongTien}</td> */}
-                    <td className="reason-cell">{item.mucDich}</td>
-
-                    {/* --- HIỂN THỊ KINH PHÍ MỚI --- */}
-                    <td style={{ fontWeight: "500" }}>
-                      {formatCurrency(item.kinhPhiDuKien)}
-                    </td>
-                    <td>
-                      {item.soTienTamUng > 0 ? (
-                        <div>
-                          <span
-                            style={{ color: "#d97706", fontWeight: "bold" }}
-                          >
-                            {formatCurrency(item.soTienTamUng)}
-                          </span>
-                          {item.lyDoTamUng && (
-                            <div
-                              style={{
-                                fontSize: "11px",
-                                color: "#666",
-                                fontStyle: "italic",
-                                maxWidth: "150px",
-                                whiteSpace: "normal",
-                                lineHeight: "1.2",
-                              }}
-                            >
-                              Lý do: {item.lyDoTamUng}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span style={{ color: "#6b7280", fontSize: "0.9em" }}>
-                          Tự túc
-                        </span>
-                      )}
-                    </td>
-                  </>
-                )}
-
-                <td>
-                  <StatusBadge status={item.trangThai} />
-                </td>
-
-                <td>
-                  {item.trangThai === "Chờ duyệt" && (
-                    <div className="action-buttons">
-                      <button
-                        className="approve-btn"
-                        onClick={() => handleAction(item.id, "approve")}
-                      >
-                        Duyệt
-                      </button>
-                      <button
-                        className="reject-btn"
-                        onClick={() => handleAction(item.id, "reject")}
-                      >
-                        Từ chối
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
+        {/* Action Column (Only visible if canApprove AND status is Pending) */}
+        {canApprove && (
+          <td>
+            {item.trangThai === "Chờ duyệt" && (
+              <div className="action-buttons">
+                <button
+                  className="approve-btn"
+                  title="Duyệt"
+                  onClick={() => handleAction(item.id, "approve")}
+                >
+                  <FaCheck />
+                </button>
+                <button
+                  className="reject-btn"
+                  title="Từ chối"
+                  onClick={() => handleAction(item.id, "reject")}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            )}
+          </td>
+        )}
+      </tr>
+    ));
   };
 
   return (
     <DashboardLayout>
       <div className="leave-management-container">
-        <h1>Quản lý Đơn từ & Phê duyệt</h1>
+        <h1>Quản lý Đơn từ & Yêu cầu</h1>
 
-        {/* --- TAB CHÍNH (LOẠI ĐƠN) --- */}
+        {/* 1. TOP TOOLBAR: Search & Department Filter */}
+        <div
+          className="filters-bar"
+          style={{
+            display: "flex",
+            gap: "15px",
+            marginBottom: "15px",
+            flexWrap: "wrap",
+          }}
+        >
+          {/* Search Box */}
+          <div
+            className="search-box"
+            style={{ position: "relative", flex: 1, minWidth: "250px" }}
+          >
+            <FaSearch
+              style={{
+                position: "absolute",
+                left: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#888",
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Tìm tên nhân viên hoặc mã NV..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 10px 10px 35px",
+                borderRadius: "4px",
+                border: "1px solid #ddd",
+                height: "40px",
+              }}
+            />
+          </div>
+
+          {/* Department Filter (Only for Admin/HR/Accountant) */}
+          {canViewAllAndFilter && (
+            <select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              style={{
+                padding: "0 10px",
+                borderRadius: "4px",
+                border: "1px solid #ddd",
+                minWidth: "200px",
+                height: "40px",
+              }}
+            >
+              <option value="">-- Tất cả phòng ban --</option>
+              {departments.map((d) => (
+                <option key={d.maPhongBan} value={d.maPhongBan}>
+                  {d.tenPhongBan}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* 2. MAIN TABS (Request Types) */}
         <div className="main-tabs">
           <button
-            className={activeTab === "leave" ? "active" : ""}
+            className={activeTab === "LEAVE" ? "active" : ""}
             onClick={() => {
-              setActiveTab("leave");
-              setStatusFilter("Chờ duyệt");
+              setActiveTab("LEAVE");
+              setStatusFilter("Chờ duyệt"); // Reset filter on tab change
             }}
           >
-            Nghỉ phép
+            <FaUmbrellaBeach style={{ marginRight: 8 }} /> Nghỉ Phép
           </button>
           <button
-            className={activeTab === "ot" ? "active" : ""}
+            className={activeTab === "OT" ? "active" : ""}
             onClick={() => {
-              setActiveTab("ot");
+              setActiveTab("OT");
               setStatusFilter("Chờ duyệt");
             }}
           >
-            Làm thêm giờ (OT)
+            <FaClock style={{ marginRight: 8 }} /> Tăng Ca (OT)
           </button>
           <button
-            className={activeTab === "trip" ? "active" : ""}
+            className={activeTab === "TRIP" ? "active" : ""}
             onClick={() => {
-              setActiveTab("trip");
+              setActiveTab("TRIP");
               setStatusFilter("Chờ duyệt");
             }}
           >
-            Công tác
+            <FaPlane style={{ marginRight: 8 }} /> Công Tác
           </button>
         </div>
 
-        {/* --- TAB CON (TRẠNG THÁI) --- */}
+        {/* 3. SUB FILTERS (Status Tabs) */}
         <div className="sub-filters">
-          {["Chờ duyệt", "Đã duyệt", "Từ chối", "Tất cả"].map((status) => (
+          {[
+            { key: "Chờ duyệt", label: "Chờ duyệt" },
+            { key: "Đã duyệt", label: "Đã duyệt" },
+            { key: "Từ chối", label: "Từ chối" },
+            { key: "", label: "Tất cả" },
+          ].map((st) => (
             <button
-              key={status}
-              className={statusFilter === status ? "active" : ""}
-              onClick={() => setStatusFilter(status)}
+              key={st.key}
+              className={statusFilter === st.key ? "active" : ""}
+              onClick={() => setStatusFilter(st.key)}
             >
-              {status}
+              {st.label}
             </button>
           ))}
         </div>
 
-        {renderTable()}
+        {/* 4. DATA TABLE */}
+        <div className="requests-table-container">
+          {loading ? (
+            <div
+              style={{ padding: "40px", textAlign: "center", color: "#666" }}
+            >
+              Đang tải dữ liệu...
+            </div>
+          ) : (
+            <table className="requests-table">
+              <thead>
+                <tr>
+                  <th style={{ width: "180px" }}>Nhân viên</th>
+                  <th style={{ width: "150px" }}>Phòng ban</th>
+
+                  {/* Dynamic Headers based on Active Tab */}
+                  {activeTab === "LEAVE" && (
+                    <>
+                      <th>Lý do</th>
+                      <th>Thời gian</th>
+                      <th className="text-center">Số ngày</th>
+                      <th>File</th>
+                      <th className="text-center">Còn lại</th>
+                    </>
+                  )}
+                  {activeTab === "OT" && (
+                    <>
+                      <th>Lý do OT</th>
+                      <th>Ngày làm</th>
+                      <th>Khung giờ</th>
+                      <th className="text-center">Tổng giờ</th>
+                      <th>-</th>
+                    </>
+                  )}
+                  {activeTab === "TRIP" && (
+                    <>
+                      <th>Nơi đến / P.Tiện</th>
+                      <th>Mục đích</th>
+                      <th>Thời gian</th>
+                      <th>Kinh phí</th>
+                      <th>-</th>
+                    </>
+                  )}
+
+                  <th style={{ width: "100px" }}>Trạng thái</th>
+                  {canApprove && <th style={{ width: "100px" }}>Hành động</th>}
+                </tr>
+              </thead>
+              <tbody>{renderTableBody()}</tbody>
+            </table>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );
 };
 
-export default LeaveManagementPage;
+export default RequestManagementPage;

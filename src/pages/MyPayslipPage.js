@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { api } from "../api";
+import { getUserFromToken } from "../utils/auth";
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -9,7 +10,7 @@ import {
 } from "react-icons/fa";
 import "../styles/MyPayslipPage.css";
 
-// Helper function to format currency
+// Helper format tiền
 const formatCurrency = (value) => {
   if (value === undefined || value === null) return "0 ₫";
   return new Intl.NumberFormat("vi-VN", {
@@ -19,8 +20,12 @@ const formatCurrency = (value) => {
 };
 
 const MyPayslipPage = () => {
-  const { employeeId } = useParams();
-  const { employee } = useOutletContext(); // Get employee info from parent context
+  const user = getUserFromToken();
+  const employeeId = user?.nameid || user?.id;
+
+  const { employee: contextEmployee } = useOutletContext() || {};
+  const employeeName =
+    contextEmployee?.hoTen || user?.unique_name || "Nhân viên";
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [payslipData, setPayslipData] = useState(null);
@@ -29,45 +34,53 @@ const MyPayslipPage = () => {
 
   const fetchData = useCallback(
     async (date) => {
-      if (!employeeId) return;
+      if (!employeeId) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       setPayslipData(null);
+
       try {
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
 
-        // Use the same API endpoint logic as the admin view but filtered for this employee
-        // Ideally, you should have an endpoint like /BangLuong/{id}?year=...&month=...
-        // If not, we can use the main one and find the specific record.
-        // Assuming your backend supports fetching individual payroll:
-        // Or if you use the general one: const response = await api.get(`/BangLuong?year=${year}&month=${month}`);
-        // Let's assume you have a specific endpoint or logic to get single employee payroll.
-        // Based on previous context, I will use the general endpoint and filter (not ideal for huge data but works for now)
-        // OR better, if you implemented GetPayrollByEmployeeId in backend.
-
-        // Let's try fetching the general payroll list and filtering for the current user
-        // (This matches the admin view logic exactly)
         const response = await api.get(
-          `/BangLuong?year=${year}&month=${month}`
+          `/BangLuong?year=${year}&month=${month}`,
         );
 
-        const myRecord = response.data.find((r) => r.maNhanVien === employeeId);
+        // Backend trả về: { Data: [...], IsPublished: ... } (PascalCase)
+        // HOẶC { data: [...], isPublished: ... } (camelCase) tùy cấu hình JSON của server
+        // Dùng destructuring an toàn để bắt cả 2 trường hợp
+        const responseData = response.data;
+        const list = responseData.data || responseData.Data || [];
+
+        // Tìm bản ghi của mình
+        // So sánh cả maNhanVien (camelCase) và MaNhanVien (PascalCase)
+        const myRecord = list.find(
+          (r) => (r.maNhanVien || r.MaNhanVien) === employeeId,
+        );
 
         if (myRecord) {
           setPayslipData(myRecord);
         } else {
-          // If no record found in the list, it might mean no data calculated yet
           setPayslipData(null);
         }
       } catch (err) {
-        console.error("Error loading payslip:", err);
-        setError("Không thể tải dữ liệu bảng lương.");
+        console.error("Lỗi tải phiếu lương:", err);
+        // Nếu lỗi 403 (Forbidden) nghĩa là chưa chốt -> Coi như chưa có dữ liệu
+        if (err.response && err.response.status === 403) {
+          setPayslipData(null);
+        } else {
+          setError("Không thể tải dữ liệu bảng lương (hoặc chưa được chốt).");
+        }
       } finally {
         setLoading(false);
       }
     },
-    [employeeId]
+    [employeeId],
   );
 
   useEffect(() => {
@@ -76,7 +89,7 @@ const MyPayslipPage = () => {
 
   const changeMonth = (offset) => {
     setCurrentDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1)
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1),
     );
   };
 
@@ -86,11 +99,9 @@ const MyPayslipPage = () => {
 
   const renderContent = () => {
     if (loading) {
-      return <div className="loading-text">Đang tải bảng lương...</div>;
+      return <div className="loading-text">Đang tải phiếu lương...</div>;
     }
-    if (error) {
-      return <div className="error-text">{error}</div>;
-    }
+
     if (!payslipData) {
       return (
         <div className="no-data-text">
@@ -100,34 +111,57 @@ const MyPayslipPage = () => {
             style={{ marginBottom: 10 }}
           />
           <p>
-            Chưa có dữ liệu lương cho tháng {currentDate.getMonth() + 1}/
+            Chưa có phiếu lương cho tháng {currentDate.getMonth() + 1}/
             {currentDate.getFullYear()}.
           </p>
+          <small style={{ color: "#888" }}>
+            (Vui lòng chờ Kế toán chốt sổ)
+          </small>
         </div>
       );
     }
 
-    // Prepare data for rendering (aligning with Admin View)
-    const {
-      luongCoBan,
-      tongPhuCap,
-      tongNgayCong,
-      tongGioOT,
-      luongChinh,
-      luongOT,
-      khauTruBHXH,
-      khauTruBHYT,
-      khauTruBHTN,
-      khoanTruKhac,
-      tongThuNhap,
-      thucLanh,
-      nghiCoPhep,
-      nghiKhongPhep,
-      lamNuaNgay,
-    } = payslipData;
+    if (error) {
+      return <div className="error-text">{error}</div>;
+    }
 
-    const totalInsurance =
-      (khauTruBHXH || 0) + (khauTruBHYT || 0) + (khauTruBHTN || 0);
+    // --- BƯỚC QUAN TRỌNG: CHUẨN HÓA DỮ LIỆU ---
+    // Tạo object 'd' (data) để map các trường bất kể Backend trả về hoa hay thường
+    const p = payslipData;
+    const d = {
+      // Cố Định
+      luongCoBan: p.luongCoBan ?? p.LuongCoBan ?? 0,
+      tongPhuCap: p.tongPhuCap ?? p.TongPhuCap ?? 0,
+
+      // Chấm Công
+      tongNgayCong: p.tongNgayCong ?? p.TongNgayCong ?? 0,
+      tongGioOT: p.tongGioOT ?? p.TongGioOT ?? 0,
+      nghiCoPhep: p.nghiCoPhep ?? p.NghiCoPhep ?? 0,
+      nghiKhongPhep: p.nghiKhongPhep ?? p.NghiKhongPhep ?? 0,
+      lamNuaNgay: p.lamNuaNgay ?? p.LamNuaNgay ?? 0,
+
+      // Thu Nhập
+      luongChinh: p.luongChinh ?? p.LuongChinh ?? 0,
+      luongOT: p.luongOT ?? p.LuongOT ?? 0,
+      tongThuNhap: p.tongThuNhap ?? p.TongThuNhap ?? 0,
+
+      // Khấu Trừ
+      khauTruBHXH: p.khauTruBHXH ?? p.KhauTruBHXH ?? 0,
+      khauTruBHYT: p.khauTruBHYT ?? p.KhauTruBHYT ?? 0,
+      khauTruBHTN: p.khauTruBHTN ?? p.KhauTruBHTN ?? 0,
+      thueTNCN: p.thueTNCN ?? p.ThueTNCN ?? 0,
+      khoanTruKhac: p.khoanTruKhac ?? p.KhoanTruKhac ?? 0,
+
+      // Kết Quả
+      thucLanh: p.thucLanh ?? p.ThucLanh ?? 0,
+
+      // Thông tin nhân viên (nếu API trả về lồng nhau)
+      hoTen: p.nhanVien?.hoTen || p.NhanVien?.HoTen || employeeName,
+      phongBan: p.nhanVien?.tenPhongBan || p.NhanVien?.TenPhongBan || "---",
+      chucVu: p.nhanVien?.tenChucVu || p.NhanVien?.TenChucVu || "---",
+    };
+
+    const totalInsurance = d.khauTruBHXH + d.khauTruBHYT + d.khauTruBHTN;
 
     return (
       <div className="payslip-container">
@@ -141,7 +175,7 @@ const MyPayslipPage = () => {
           <div className="emp-info-grid">
             <div className="info-row">
               <span className="label">Họ tên:</span>
-              <span className="val">{employee?.hoTen}</span>
+              <span className="val">{d.hoTen}</span>
             </div>
             <div className="info-row">
               <span className="label">Mã NV:</span>
@@ -149,11 +183,11 @@ const MyPayslipPage = () => {
             </div>
             <div className="info-row">
               <span className="label">Phòng ban:</span>
-              <span className="val">{employee?.tenPhongBan || "---"}</span>
+              <span className="val">{d.phongBan}</span>
             </div>
             <div className="info-row">
               <span className="label">Chức vụ:</span>
-              <span className="val">{employee?.tenChucVu || "---"}</span>
+              <span className="val">{d.chucVu}</span>
             </div>
           </div>
         </div>
@@ -164,24 +198,26 @@ const MyPayslipPage = () => {
             <h4 className="section-title text-green">I. THU NHẬP</h4>
             <div className="detail-row">
               <span>Lương Cơ Bản</span>
-              <span className="amount">{formatCurrency(luongCoBan)}</span>
+              <span className="amount">{formatCurrency(d.luongCoBan)}</span>
             </div>
             <div className="detail-row">
-              <span>Lương Trợ Cấp (Phụ Cấp)</span>
-              <span className="amount">{formatCurrency(tongPhuCap)}</span>
+              <span>Phụ Cấp</span>
+              <span className="amount">{formatCurrency(d.tongPhuCap)}</span>
             </div>
             <div className="detail-row highlight-bg">
-              <span>Lương Chính (Theo {tongNgayCong} ngày công)</span>
-              <span className="amount bold">{formatCurrency(luongChinh)}</span>
+              <span>Lương Chính ({d.tongNgayCong} công)</span>
+              <span className="amount bold">
+                {formatCurrency(d.luongChinh)}
+              </span>
             </div>
             <div className="detail-row">
-              <span>Lương OT ({tongGioOT} giờ)</span>
-              <span className="amount">{formatCurrency(luongOT)}</span>
+              <span>Lương OT ({d.tongGioOT} giờ)</span>
+              <span className="amount">{formatCurrency(d.luongOT)}</span>
             </div>
             <div className="detail-row total-row">
-              <span>TỔNG THU NHẬP</span>
+              <span>TỔNG THU NHẬP (Gross)</span>
               <span className="amount text-green">
-                {formatCurrency(tongThuNhap)}
+                {formatCurrency(d.tongThuNhap)}
               </span>
             </div>
           </div>
@@ -191,53 +227,51 @@ const MyPayslipPage = () => {
             <h4 className="section-title text-red">II. CÁC KHOẢN KHẤU TRỪ</h4>
             <div className="detail-row">
               <span>BHXH (8%)</span>
-              <span className="amount">{formatCurrency(khauTruBHXH)}</span>
+              <span className="amount">{formatCurrency(d.khauTruBHXH)}</span>
             </div>
             <div className="detail-row">
               <span>BHYT (1.5%)</span>
-              <span className="amount">{formatCurrency(khauTruBHYT)}</span>
+              <span className="amount">{formatCurrency(d.khauTruBHYT)}</span>
             </div>
             <div className="detail-row">
               <span>BHTN (1%)</span>
-              <span className="amount">{formatCurrency(khauTruBHTN)}</span>
+              <span className="amount">{formatCurrency(d.khauTruBHTN)}</span>
             </div>
             <div className="detail-row">
-              <span>Khấu trừ khác</span>
-              <span className="amount">{formatCurrency(khoanTruKhac)}</span>
+              <span>Thuế TNCN</span>
+              <span className="amount">{formatCurrency(d.thueTNCN)}</span>
+            </div>
+            <div className="detail-row">
+              <span>Khấu trừ khác (Phạt...)</span>
+              <span className="amount">{formatCurrency(d.khoanTruKhac)}</span>
             </div>
             <div className="detail-row total-row">
               <span>TỔNG KHẤU TRỪ</span>
               <span className="amount text-red">
-                {formatCurrency(totalInsurance + (khoanTruKhac || 0))}
+                {formatCurrency(totalInsurance + d.khoanTruKhac + d.thueTNCN)}
               </span>
             </div>
           </div>
 
-          {/* 3. THÔNG TIN CÔNG (THAM KHẢO) */}
+          {/* 3. THÔNG TIN CÔNG */}
           <div className="section-block info-only">
-            <h4 className="section-title text-blue">
-              III. THÔNG TIN CHẤM CÔNG
-            </h4>
+            <h4 className="section-title text-blue">III. CHI TIẾT CHẤM CÔNG</h4>
             <div className="attendance-grid">
               <div className="att-item">
                 <span className="lbl">Tổng Công</span>
-                <span className="val">{tongNgayCong}</span>
+                <span className="val">{d.tongNgayCong}</span>
               </div>
               <div className="att-item">
                 <span className="lbl">Nghỉ Phép</span>
-                <span className="val">{nghiCoPhep}</span>
+                <span className="val">{d.nghiCoPhep}</span>
               </div>
               <div className="att-item">
                 <span className="lbl">Không Phép</span>
-                <span className="val">{nghiKhongPhep}</span>
+                <span className="val">{d.nghiKhongPhep}</span>
               </div>
               <div className="att-item">
                 <span className="lbl">Nửa Ngày</span>
-                <span className="val">{lamNuaNgay}</span>
-              </div>
-              <div className="att-item">
-                <span className="lbl">Giờ OT</span>
-                <span className="val">{tongGioOT}</span>
+                <span className="val">{d.lamNuaNgay}</span>
               </div>
             </div>
           </div>
@@ -245,14 +279,13 @@ const MyPayslipPage = () => {
           {/* 4. THỰC LĨNH */}
           <div className="net-salary-section">
             <div className="net-label">THỰC LĨNH (Net Salary)</div>
-            <div className="net-amount">{formatCurrency(thucLanh)}</div>
+            <div className="net-amount">{formatCurrency(d.thucLanh)}</div>
           </div>
         </div>
 
         <div className="payslip-footer">
           <p className="note">
-            * Mọi thắc mắc về lương vui lòng liên hệ phòng Kế toán trong vòng 3
-            ngày kể từ ngày nhận phiếu.
+            * Mọi thắc mắc vui lòng liên hệ phòng Kế toán trong vòng 3 ngày.
           </p>
         </div>
       </div>
@@ -263,13 +296,13 @@ const MyPayslipPage = () => {
     <div className="my-payslip-view">
       <div className="month-navigator-bar">
         <div className="month-navigator">
-          <button onClick={() => changeMonth(-1)} disabled={loading}>
+          <button onClick={() => changeMonth(-1)}>
             <FaChevronLeft />
           </button>
           <h2>{`Tháng ${
             currentDate.getMonth() + 1
           }, ${currentDate.getFullYear()}`}</h2>
-          <button onClick={() => changeMonth(1)} disabled={loading}>
+          <button onClick={() => changeMonth(1)}>
             <FaChevronRight />
           </button>
         </div>

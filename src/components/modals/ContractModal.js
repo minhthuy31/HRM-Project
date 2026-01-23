@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FaFileContract } from "react-icons/fa"; // <--- ĐÃ BỔ SUNG IMPORT NÀY
 import "../../styles/Modal.css";
 
 const ContractModal = ({ contract, employees, onSave, onCancel }) => {
@@ -14,6 +15,7 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
   });
   const [file, setFile] = useState(null);
 
+  // Load dữ liệu khi sửa
   useEffect(() => {
     if (contract) {
       setFormData({
@@ -43,7 +45,7 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
   };
 
   const handleCurrencyChange = (e) => {
-    const val = e.target.value.replace(/\D/g, "");
+    const val = e.target.value.replace(/\D/g, ""); // Chỉ lấy số
     setFormData((prev) => ({ ...prev, luongCoBan: val }));
   };
 
@@ -63,34 +65,32 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
     payload.append("maNhanVien", formData.maNhanVien);
     payload.append("loaiHopDong", formData.loaiHopDong);
     payload.append("ngayBatDau", formData.ngayBatDau);
-
-    // Chỉ gửi ngày kết thúc nếu có giá trị
-    if (formData.ngayKetThuc) {
+    if (formData.ngayKetThuc)
       payload.append("ngayKetThuc", formData.ngayKetThuc);
-    }
-
     payload.append("luongCoBan", formData.luongCoBan);
     payload.append("trangThai", formData.trangThai);
     payload.append("ghiChu", formData.ghiChu || "");
 
-    if (file) {
-      payload.append("fileDinhKem", file);
-    }
+    if (file) payload.append("fileDinhKem", file);
 
     onSave(payload, !!contract);
   };
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: "600px" }}>
+      <div className="modal-content" style={{ maxWidth: "650px" }}>
         <div className="modal-header">
-          <h2>{contract ? "Cập nhật hợp đồng" : "Tạo hợp đồng mới"}</h2>
+          <h2>{contract ? "Cập nhật Hợp đồng" : "Tạo Hợp đồng mới"}</h2>
           <span className="close-icon" onClick={onCancel}>
             &times;
           </span>
         </div>
 
-        <div className="modal-body">
+        <div
+          className="modal-body"
+          style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: "10px" }}
+        >
+          {/* Hàng 1: Số HĐ & Nhân viên */}
           <div className="form-group-row">
             <div className="form-group">
               <label>
@@ -124,21 +124,42 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Loại hợp đồng</label>
-            <select
-              name="loaiHopDong"
-              value={formData.loaiHopDong}
-              onChange={handleChange}
-            >
-              <option value="Thử việc">Thử việc (2 tháng)</option>
-              <option value="Chính thức 1 năm">Chính thức 1 năm</option>
-              <option value="Chính thức 3 năm">Chính thức 3 năm</option>
-              <option value="Vô thời hạn">Vô thời hạn</option>
-              <option value="CTV">Cộng tác viên</option>
-            </select>
+          {/* Hàng 2: Loại & Trạng thái */}
+          <div className="form-group-row">
+            <div className="form-group">
+              <label>Loại hợp đồng</label>
+              <select
+                name="loaiHopDong"
+                value={formData.loaiHopDong}
+                onChange={handleChange}
+              >
+                <option value="Thử việc">Thử việc (2 tháng)</option>
+                <option value="Chính thức 1 năm">Chính thức 1 năm</option>
+                <option value="Chính thức 3 năm">Chính thức 3 năm</option>
+                <option value="Vô thời hạn">Vô thời hạn</option>
+                <option value="CTV">Cộng tác viên</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Trạng thái</label>
+              <select
+                name="trangThai"
+                value={formData.trangThai}
+                onChange={handleChange}
+                style={{
+                  borderColor:
+                    formData.trangThai === "DaChamDut" ? "red" : "#ddd",
+                  color: formData.trangThai === "DaChamDut" ? "red" : "#333",
+                }}
+              >
+                <option value="HieuLuc">Đang hiệu lực</option>
+                <option value="HetHan">Hết hạn</option>
+                <option value="DaChamDut">Đã chấm dứt (Nghỉ việc)</option>
+              </select>
+            </div>
           </div>
 
+          {/* Hàng 3: Thời gian */}
           <div className="form-group-row">
             <div className="form-group">
               <label>Ngày bắt đầu</label>
@@ -160,6 +181,7 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
             </div>
           </div>
 
+          {/* Hàng 4: Lương & File */}
           <div className="form-group">
             <label>
               Lương ký hợp đồng (VNĐ) <span style={{ color: "red" }}>*</span>
@@ -168,7 +190,7 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
               type="text"
               value={formatCurrency(formData.luongCoBan)}
               onChange={handleCurrencyChange}
-              style={{ fontWeight: "bold", color: "#16a34a" }}
+              style={{ fontWeight: "bold", color: "#16a34a", fontSize: "16px" }}
             />
           </div>
 
@@ -180,31 +202,22 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
               accept=".pdf,.jpg,.jpeg,.png"
             />
             {contract && contract.tepDinhKem && !file && (
-              <div
-                style={{ fontSize: "12px", marginTop: "5px", color: "#007bff" }}
-              >
+              <div style={{ fontSize: "13px", marginTop: "5px" }}>
                 <a
                   href={`http://localhost:5260${contract.tepDinhKem}`}
                   target="_blank"
                   rel="noreferrer"
+                  style={{
+                    color: "#0e7c7b",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
                 >
-                  Đang có file đính kèm
+                  <FaFileContract /> Xem file hiện tại
                 </a>
               </div>
             )}
-          </div>
-
-          <div className="form-group">
-            <label>Trạng thái</label>
-            <select
-              name="trangThai"
-              value={formData.trangThai}
-              onChange={handleChange}
-            >
-              <option value="HieuLuc">Đang hiệu lực</option>
-              <option value="HetHan">Hết hạn</option>
-              <option value="DaChamDut">Đã chấm dứt</option>
-            </select>
           </div>
 
           <div className="form-group">
@@ -214,6 +227,7 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
               value={formData.ghiChu}
               onChange={handleChange}
               rows="2"
+              placeholder="Ghi chú thêm..."
             />
           </div>
         </div>
@@ -223,7 +237,7 @@ const ContractModal = ({ contract, employees, onSave, onCancel }) => {
             Hủy
           </button>
           <button className="save-btn" onClick={handleSubmit}>
-            Lưu
+            Lưu Hợp Đồng
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
+import { getUserFromToken } from "../utils/auth";
 import {
   FaEye,
   FaEdit,
@@ -12,12 +13,19 @@ import {
   FaUndo,
   FaBan,
 } from "react-icons/fa";
-import "../styles/DepartmentPage.css"; // CSS riêng biệt
+import "../styles/DepartmentPage.css";
 import DepartmentModal from "../components/modals/DepartmentModal";
 import EmployeeListModal from "../components/modals/EmployeeListModal";
 
-// --- ContextMenu riêng biệt cho Dept ---
-const DepartmentContextMenu = ({ department, onAction, onClose, x, y }) => {
+// --- ContextMenu ---
+const DepartmentContextMenu = ({
+  department,
+  onAction,
+  onClose,
+  x,
+  y,
+  canModify,
+}) => {
   useEffect(() => {
     const handleClickOutside = () => onClose();
     document.addEventListener("click", handleClickOutside);
@@ -33,17 +41,23 @@ const DepartmentContextMenu = ({ department, onAction, onClose, x, y }) => {
         <li onClick={() => onAction("viewDetails", department)}>
           <FaEye /> Xem chi tiết
         </li>
-        <li onClick={() => onAction("edit", department)}>
-          <FaEdit /> Chỉnh sửa
-        </li>
-        {department.trangThai ? (
-          <li onClick={() => onAction("disable", department)}>
-            <FaTrash /> Vô hiệu hóa
-          </li>
-        ) : (
-          <li onClick={() => onAction("activate", department)}>
-            <FaUndo /> Kích hoạt
-          </li>
+
+        {/* Chỉ hiện Sửa/Xóa/Kích hoạt nếu có quyền quản lý */}
+        {canModify && (
+          <>
+            <li onClick={() => onAction("edit", department)}>
+              <FaEdit /> Chỉnh sửa
+            </li>
+            {department.trangThai ? (
+              <li onClick={() => onAction("disable", department)}>
+                <FaTrash /> Vô hiệu hóa
+              </li>
+            ) : (
+              <li onClick={() => onAction("activate", department)}>
+                <FaUndo /> Kích hoạt
+              </li>
+            )}
+          </>
         )}
       </ul>
     </div>
@@ -63,6 +77,13 @@ const DepartmentPage = () => {
 
   const [activeMenu, setActiveMenu] = useState({ id: null, x: 0, y: 0 });
 
+  // --- LOGIC PHÂN QUYỀN (ĐÃ SỬA) ---
+  const user = getUserFromToken();
+  const userRole = user?.role || user?.Role || "";
+
+  // SỬA Ở ĐÂY: Thêm điều kiện userRole === "Giám đốc"
+  const isHRManager = userRole === "Nhân sự trưởng" || userRole === "Giám đốc";
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setPermissionDenied(false);
@@ -75,7 +96,10 @@ const DepartmentPage = () => {
       const response = await api.get(url);
       setPhongBans(response.data);
     } catch (error) {
-      if (error.response && error.response.status === 403) {
+      if (
+        error.response &&
+        (error.response.status === 403 || error.response.status === 401)
+      ) {
         setPermissionDenied(true);
         setPhongBans([]);
       } else {
@@ -96,7 +120,6 @@ const DepartmentPage = () => {
   const handleToggleMenu = (e, department) => {
     e.preventDefault();
     e.stopPropagation();
-    // Logic tính toán vị trí menu
     const menuWidth = 200;
     const menuHeight = 170;
     let x = e.clientX;
@@ -112,6 +135,18 @@ const DepartmentPage = () => {
 
   const handleAction = (actionType, dept) => {
     setActiveMenu({ id: null, x: 0, y: 0 });
+
+    // --- CHẶN HÀNH ĐỘNG SỬA/XÓA NẾU KHÔNG PHẢI QUẢN LÝ ---
+    if (
+      (actionType === "edit" ||
+        actionType === "disable" ||
+        actionType === "activate") &&
+      !isHRManager
+    ) {
+      alert("Bạn không có quyền thực hiện hành động này.");
+      return;
+    }
+
     switch (actionType) {
       case "viewEmployees":
         handleViewEmployees(dept);
@@ -138,6 +173,7 @@ const DepartmentPage = () => {
     e.preventDefault();
     fetchData();
   };
+
   const handleAdd = () => {
     setCurrentDepartment(null);
     setIsEditModalOpen(true);
@@ -158,7 +194,7 @@ const DepartmentPage = () => {
   const handleDisable = async (dept) => {
     if (
       window.confirm(
-        `Bạn có chắc muốn vô hiệu hóa phòng ban ${dept.tenPhongBan}?`
+        `Bạn có chắc muốn vô hiệu hóa phòng ban ${dept.tenPhongBan}?`,
       )
     ) {
       try {
@@ -177,7 +213,7 @@ const DepartmentPage = () => {
   const handleActivate = async (dept) => {
     if (
       window.confirm(
-        `Bạn có chắc muốn kích hoạt lại phòng ban ${dept.tenPhongBan}?`
+        `Bạn có chắc muốn kích hoạt lại phòng ban ${dept.tenPhongBan}?`,
       )
     ) {
       try {
@@ -194,6 +230,12 @@ const DepartmentPage = () => {
   };
 
   const handleSave = async (deptData) => {
+    // Chặn ở client trước khi gọi API
+    if (!isHRManager) {
+      alert("Bạn không có quyền thêm/sửa phòng ban.");
+      return;
+    }
+
     try {
       const dataToSave = {
         ...deptData,
@@ -232,7 +274,6 @@ const DepartmentPage = () => {
   return (
     <DashboardLayout>
       <div className="dept-page">
-        {/* HEADER: Dùng class riêng dept-header */}
         <div className="dept-header">
           <h1>Quản lý Phòng ban</h1>
 
@@ -260,9 +301,12 @@ const DepartmentPage = () => {
               </select>
             </div>
 
-            <button onClick={handleAdd} className="dept-add-btn">
-              <FaPlus /> Thêm mới
-            </button>
+            {/* Chỉ hiện nút THÊM MỚI nếu có quyền quản lý */}
+            {isHRManager && (
+              <button onClick={handleAdd} className="dept-add-btn">
+                <FaPlus /> Thêm mới
+              </button>
+            )}
           </div>
         </div>
 
@@ -335,6 +379,7 @@ const DepartmentPage = () => {
           onClose={() => setActiveMenu({ id: null, x: 0, y: 0 })}
           x={activeMenu.x}
           y={activeMenu.y}
+          canModify={isHRManager} // Truyền quyền xuống Menu
         />
       )}
 

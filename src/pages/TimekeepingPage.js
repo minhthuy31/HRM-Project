@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { getUserFromToken } from "../utils/auth";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaLock,
+  FaUnlock,
+} from "react-icons/fa";
 import "../styles/TimekeepingPage.css";
 import AttendanceModal from "../components/modals/AttendanceModal";
 import BulkEditModal from "../components/modals/BulkEditModal";
@@ -13,19 +19,34 @@ const TimekeepingPage = () => {
   const [loading, setLoading] = useState(true);
   const [summaries, setSummaries] = useState({});
 
-  // State cho việc chỉnh sửa và lựa chọn
-  const [editingCell, setEditingCell] = useState(null); // Sửa 1 ô
-  const [selection, setSelection] = useState({ type: null, id: null }); // Chọn hàng/cột
-  const [isDragging, setIsDragging] = useState(false); // Kéo chuột
+  // State kiểm tra trạng thái khóa công
+  const [isLocked, setIsLocked] = useState(false);
+
+  // State cho việc chỉnh sửa
+  const [editingCell, setEditingCell] = useState(null);
+  const [selection, setSelection] = useState({ type: null, id: null });
+  const [isDragging, setIsDragging] = useState(false);
   const [startCell, setStartCell] = useState(null);
   const [endCell, setEndCell] = useState(null);
-  const [bulkEditData, setBulkEditData] = useState(null); // Mở modal sửa hàng loạt
+  const [bulkEditData, setBulkEditData] = useState(null);
+
+  const user = getUserFromToken();
+  const userRole = user?.role || user?.Role || "";
+
+  // Logic phân quyền
+  const canEdit =
+    ["Nhân sự trưởng", "Giám đốc", "Trưởng phòng"].includes(userRole) &&
+    !isLocked;
+  const isAdmin = ["Nhân sự trưởng", "Giám đốc", "Tổng giám đốc"].includes(
+    userRole,
+  );
 
   const fetchData = useCallback(async (date) => {
     setLoading(true);
     try {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
+
       const [empRes, attendanceRes] = await Promise.all([
         api.get("/NhanVien?trangThai=true"),
         api.get(`/ChamCong?year=${year}&month=${month}`),
@@ -33,34 +54,40 @@ const TimekeepingPage = () => {
 
       setEmployees(empRes.data);
 
-      const { dailyRecords, summaries: summaryData } = attendanceRes.data;
+      const {
+        dailyRecords,
+        summaries: summaryData,
+        isLocked: lockedStatus,
+      } = attendanceRes.data;
 
       setSummaries(summaryData || {});
+      setIsLocked(lockedStatus);
+
       const attendanceMap = {};
       if (dailyRecords) {
         dailyRecords.forEach((rec) => {
           const dateKey = parseInt(rec.ngayChamCong.split("-")[2], 10);
-
-          if (!attendanceMap[rec.maNhanVien]) {
+          if (!attendanceMap[rec.maNhanVien])
             attendanceMap[rec.maNhanVien] = {};
-          }
           attendanceMap[rec.maNhanVien][dateKey] = rec;
         });
       }
       setAttendance(attendanceMap);
     } catch (error) {
-      console.error("Lỗi tải dữ liệu chấm công:", error);
+      console.error("Lỗi:", error);
+      if (error.response?.status === 403) alert("Không có quyền truy cập.");
     } finally {
       setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     fetchData(currentDate);
   }, [currentDate, fetchData]);
 
   const changeMonth = (offset) => {
     setCurrentDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1)
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1),
     );
   };
 
@@ -68,40 +95,23 @@ const TimekeepingPage = () => {
     new Date(year, month + 1, 0).getDate();
   const daysInMonth = getDaysInMonth(
     currentDate.getFullYear(),
-    currentDate.getMonth()
+    currentDate.getMonth(),
   );
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const getWorkDayStyle = (record) => {
     const ngayCong = record?.ngayCong;
-    if (ngayCong === 1.0) {
-      // Nếu có GhiChu (lý do) -> "Nghỉ có phép"
+    if (ngayCong === 1.0)
       return {
         text: "1.0",
         className: record?.ghiChu ? "status-leave" : "status-present",
       };
-    }
-    if (ngayCong === 0.5) {
-      return { text: "0.5", className: "status-half-day" };
-    }
-    if (ngayCong === 0.0) {
-      return { text: "0.0", className: "status-absent" };
-    }
+    if (ngayCong === 0.5) return { text: "0.5", className: "status-half-day" };
+    if (ngayCong === 0.0) return { text: "0.0", className: "status-absent" };
     return { text: "", className: "" };
   };
-  /*
-  const handleCellClick = (maNhanVien, day) => {
-    const record = attendance[maNhanVien]?.[day] || {};
-    setEditingCell({
-      maNhanVien,
-      day,
-      ngayCong: record.ngayCong,
-      ghiChu: record.ghiChu,
-    });
-  };
-  */
 
-  // --- CÁC HÀM XỬ LÝ SỰ KIỆN MỚI ---
+  // --- SELECTION & DRAG LOGIC ---
   const clearSelections = () => {
     setSelection({ type: null, id: null });
     setIsDragging(false);
@@ -110,36 +120,35 @@ const TimekeepingPage = () => {
     document.body.style.userSelect = "auto";
   };
 
-  const handleSelectRow = (maNhanVien) => {
-    clearSelections();
-    setSelection({ type: "row", id: maNhanVien });
-    setBulkEditData({ type: "row", id: maNhanVien }); // Mở modal
-  };
-
-  const handleSelectColumn = (day) => {
-    clearSelections();
-    setSelection({ type: "column", id: day });
-    setBulkEditData({ type: "column", id: day }); // Mở modal
+  const handleCellClick = (maNhanVien, day) => {
+    if (!canEdit) {
+      if (isLocked) alert("Bảng công tháng này đã bị khóa.");
+      return;
+    }
+    const record = attendance[maNhanVien]?.[day] || {};
+    setEditingCell({
+      maNhanVien,
+      day,
+      ngayCong: record.ngayCong,
+      ghiChu: record.ghiChu,
+    });
   };
 
   const handleMouseDown = (maNhanVien, day) => {
+    if (!canEdit) return;
     clearSelections();
     setIsDragging(true);
-    const cell = { maNhanVien, day };
-    setStartCell(cell);
-    setEndCell(cell);
+    setStartCell({ maNhanVien, day });
+    setEndCell({ maNhanVien, day });
     document.body.style.userSelect = "none";
   };
 
   const handleMouseEnter = (maNhanVien, day) => {
-    if (isDragging) {
-      setEndCell({ maNhanVien, day });
-    }
+    if (isDragging) setEndCell({ maNhanVien, day });
   };
 
   const handleMouseUp = () => {
     if (isDragging) {
-      // Chỉ mở modal nếu kéo nhiều hơn 1 ô
       if (
         startCell &&
         endCell &&
@@ -148,18 +157,32 @@ const TimekeepingPage = () => {
       ) {
         setBulkEditData({ type: "range", start: startCell, end: endCell });
       }
-      setIsDragging(false); // Dừng kéo ngay cả khi chỉ kéo 1 ô
+      setIsDragging(false);
     }
     document.body.style.userSelect = "auto";
   };
 
+  const handleSelectRow = (id) => {
+    if (canEdit) {
+      clearSelections();
+      setSelection({ type: "row", id });
+      setBulkEditData({ type: "row", id });
+    }
+  };
+
+  const handleSelectColumn = (id) => {
+    if (canEdit) {
+      clearSelections();
+      setSelection({ type: "column", id });
+      setBulkEditData({ type: "column", id });
+    }
+  };
+
   const isCellSelected = (maNhanVien, day) => {
-    // 1. Kiểm tra chọn hàng/cột
     if (selection.type === "row" && selection.id === maNhanVien) return true;
     if (selection.type === "column" && selection.id === day) return true;
-
-    // 2. Kiểm tra chọn vùng (kéo chuột)
     if (!isDragging || !startCell || !endCell) return false;
+
     const empIds = employees.map((e) => e.maNhanVien);
     const startRow = empIds.indexOf(startCell.maNhanVien);
     const endRow = empIds.indexOf(endCell.maNhanVien);
@@ -175,19 +198,42 @@ const TimekeepingPage = () => {
     );
   };
 
-  const handleBulkSave = async (dataToSave) => {
-    if (!bulkEditData) return;
+  // --- SAVE ACTIONS ---
+  const handleSave = async (editData) => {
+    if (!editingCell || !canEdit) return;
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const formattedDate = `${year}-${String(month).padStart(2, "0")}-${String(
+      editingCell.day,
+    ).padStart(2, "0")}`;
 
+    try {
+      await api.post("/ChamCong/upsert", {
+        maNhanVien: editingCell.maNhanVien,
+        ngayChamCong: formattedDate,
+        ngayCong: editData.ngayCong,
+        ghiChu: editData.ghiChu,
+      });
+      setEditingCell(null);
+      fetchData(currentDate);
+    } catch (error) {
+      const msg = error.response?.data?.message || "Lỗi lưu dữ liệu.";
+      alert(msg);
+    }
+  };
+
+  const handleBulkSave = async (dataToSave) => {
+    if (!bulkEditData || !canEdit) return;
     const promises = [];
     const empIds = employees.map((e) => e.maNhanVien);
     const { type, id, start, end } = bulkEditData;
-
     let cellsToUpdate = [];
+
     if (type === "row") {
       daysArray.forEach((day) => cellsToUpdate.push({ maNhanVien: id, day }));
     } else if (type === "column") {
       employees.forEach((emp) =>
-        cellsToUpdate.push({ maNhanVien: emp.maNhanVien, day: id })
+        cellsToUpdate.push({ maNhanVien: emp.maNhanVien, day: id }),
       );
     } else if (type === "range") {
       const startRow = empIds.indexOf(start.maNhanVien);
@@ -211,16 +257,31 @@ const TimekeepingPage = () => {
 
     cellsToUpdate.forEach(({ maNhanVien, day }) => {
       const formattedDate = `${currentDate.getFullYear()}-${String(
-        currentDate.getMonth() + 1
+        currentDate.getMonth() + 1,
       ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const record = { maNhanVien, ngayChamCong: formattedDate, ...dataToSave };
-      promises.push(api.post("/ChamCong/upsert", record));
+
+      const hasData = attendance[maNhanVien] && attendance[maNhanVien][day];
+      if (hasData) return;
+
+      promises.push(
+        api.post("/ChamCong/upsert", {
+          maNhanVien,
+          ngayChamCong: formattedDate,
+          ...dataToSave,
+          OnlyIfEmpty: true,
+        }),
+      );
     });
 
     try {
-      await Promise.all(promises);
+      if (promises.length === 0) {
+        alert("Không có ô trống nào cần điền trong vùng đã chọn.");
+      } else {
+        await Promise.all(promises);
+        alert(`Đã điền thành công cho ${promises.length} ô trống.`);
+      }
     } catch (error) {
-      console.error("Lỗi cập nhật hàng loạt:", error);
+      alert("Có lỗi xảy ra (Có thể do mạng hoặc quyền hạn).");
     } finally {
       setBulkEditData(null);
       clearSelections();
@@ -228,68 +289,121 @@ const TimekeepingPage = () => {
     }
   };
 
-  const handleSave = async (editData) => {
-    if (!editingCell) return;
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1;
-    const day = editingCell.day;
-    const formattedDate = `${year}-${String(month).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
-
-    const record = {
-      maNhanVien: editingCell.maNhanVien,
-      ngayChamCong: formattedDate,
-      ngayCong: editData.ngayCong,
-      ghiChu: editData.ghiChu,
-    };
+  // --- KHÓA / HỦY KHÓA CÔNG ---
+  const handleLockAction = async (lockStatus) => {
+    const actionText = lockStatus ? "KHÓA" : "HỦY KHÓA";
+    if (
+      !window.confirm(
+        `Bạn có chắc muốn ${actionText} bảng công tháng ${
+          currentDate.getMonth() + 1
+        }/${currentDate.getFullYear()}?`,
+      )
+    )
+      return;
 
     try {
-      const response = await api.post("/ChamCong/upsert", record);
-      setEditingCell(null);
-
-      if (response.data.wasConverted) {
-        alert("Lưu thành công!\nBạn đã hết ngày nghỉ có phép.");
-      }
-
+      await api.post("/ChamCong/lock-action", {
+        year: currentDate.getFullYear(),
+        month: currentDate.getMonth() + 1,
+        isLocked: lockStatus,
+      });
+      alert(`Đã ${actionText.toLowerCase()} bảng công thành công!`);
       fetchData(currentDate);
-    } catch (error) {
-      if (error.response && error.response.data) {
-        alert(`Lỗi: ${error.response.data}`);
-      } else {
-        console.error("Lỗi cập nhật chấm công:", error);
-      }
+    } catch (e) {
+      const msg =
+        e.response?.data?.message ||
+        `Lỗi khi ${actionText.toLowerCase()} công.`;
+      alert(msg);
     }
   };
 
   return (
     <DashboardLayout>
       <div className="timekeeping-page">
-        {/* Header điều hướng tháng */}
         <div className="timekeeping-header">
           <div className="month-navigator">
             <button onClick={() => changeMonth(-1)}>
               <FaChevronLeft />
             </button>
-
-            <h2>{`Tháng ${
-              currentDate.getMonth() + 1
-            }, ${currentDate.getFullYear()}`}</h2>
-
+            <h2>{`Tháng ${currentDate.getMonth() + 1}, ${currentDate.getFullYear()}`}</h2>
             <button onClick={() => changeMonth(1)}>
               <FaChevronRight />
             </button>
           </div>
+
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            {isLocked && (
+              <span
+                style={{
+                  color: "#e11d48",
+                  fontWeight: "bold",
+                  border: "1px solid #e11d48",
+                  padding: "5px 10px",
+                  borderRadius: "5px",
+                  backgroundColor: "#fff1f2",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  fontSize: "14px",
+                }}
+              >
+                <FaLock size={12} /> ĐÃ KHÓA
+              </span>
+            )}
+
+            {isAdmin && (
+              <>
+                {!isLocked ? (
+                  <button
+                    className="lock-btn"
+                    style={{
+                      backgroundColor: "#e11d48",
+                      color: "white",
+                      padding: "8px 16px",
+                      borderRadius: "4px",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      cursor: "pointer",
+                      fontWeight: "500",
+                    }}
+                    onClick={() => handleLockAction(true)}
+                  >
+                    <FaLock /> Khóa công
+                  </button>
+                ) : (
+                  <button
+                    className="unlock-btn"
+                    style={{
+                      backgroundColor: "#10b981",
+                      color: "white",
+                      padding: "8px 16px",
+                      borderRadius: "4px",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      cursor: "pointer",
+                      fontWeight: "500",
+                    }}
+                    onClick={() => handleLockAction(false)}
+                  >
+                    <FaUnlock /> Hủy khóa công
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Bảng chấm công */}
         <div
           className="timekeeping-table-container"
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
           {loading ? (
-            <p>Đang tải...</p>
+            <p style={{ padding: "20px" }}>Đang tải...</p>
           ) : (
             <table className="timekeeping-table">
               <thead>
@@ -304,11 +418,12 @@ const TimekeepingPage = () => {
                           : ""
                       }`}
                       onClick={() => handleSelectColumn(day)}
+                      style={{ cursor: canEdit ? "pointer" : "default" }}
                     >
                       {day}
                     </th>
                   ))}
-                  <th className="summary-col">Tổng công</th>
+                  <th className="summary-col">Tổng</th>
                 </tr>
               </thead>
               <tbody>
@@ -319,19 +434,19 @@ const TimekeepingPage = () => {
                       <td
                         className="employee-name-col"
                         onClick={() => handleSelectRow(emp.maNhanVien)}
+                        style={{ cursor: canEdit ? "pointer" : "default" }}
                       >
                         <div className="employee-info">
                           <span className="font-bold">{emp.hoTen}</span>
                           <br />
                           <span
-                            style={{ color: "#f87171", opacity: 0.6 }}
+                            style={{ color: "#f87171", opacity: 0.8 }}
                             className="font-normal text-sm"
                           >
                             {emp.maNhanVien}
                           </span>
                         </div>
                       </td>
-
                       {daysArray.map((day) => {
                         const record = attendance[emp.maNhanVien]?.[day] || {};
                         const style = getWorkDayStyle(record);
@@ -348,16 +463,12 @@ const TimekeepingPage = () => {
                             onMouseEnter={() =>
                               handleMouseEnter(emp.maNhanVien, day)
                             }
-                            onClick={() =>
-                              setEditingCell({
-                                maNhanVien: emp.maNhanVien,
-                                day,
-                                ...record,
-                              })
-                            }
+                            onClick={() => handleCellClick(emp.maNhanVien, day)}
+                            style={{
+                              cursor: canEdit ? "pointer" : "not-allowed",
+                            }}
                           >
                             <span>{style.text}</span>
-                            <br></br>
                             {record.ghiChu && (
                               <span className="reason-note">
                                 {record.ghiChu}
@@ -366,7 +477,6 @@ const TimekeepingPage = () => {
                           </td>
                         );
                       })}
-
                       <td className="summary-col">
                         <strong>
                           {summary.tongCong !== undefined
@@ -383,7 +493,6 @@ const TimekeepingPage = () => {
         </div>
       </div>
 
-      {/* Modal sửa 1 ô */}
       {editingCell && (
         <AttendanceModal
           cellData={editingCell}
@@ -392,8 +501,6 @@ const TimekeepingPage = () => {
           remainingLeave={summaries[editingCell.maNhanVien]?.remainingLeaveDays}
         />
       )}
-
-      {/* Modal sửa hàng loạt */}
       {bulkEditData && (
         <BulkEditModal
           onSave={handleBulkSave}

@@ -25,26 +25,32 @@ const LoginPage = () => {
       const normalizeRole = (r) => {
         if (!r) return "";
         return r
+          .toString()
           .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
-          .replace(/đ/g, "d");
-      };
-
-      const roleMap = {
-        nhanvien: "/employee-home",
-        giamdoc: "/dashboard",
-        truongphong: "/dashboard",
-        ketoantruong: "/dashboard",
-        tonggiamdoc: "/dashboard",
+          .trim()
+          .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+          .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+          .replace(/[ìíịỉĩ]/g, "i")
+          .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+          .replace(/[ùúụủũưừứựửữ]/g, "u")
+          .replace(/[ỳýỵỷỹ]/g, "y")
+          .replace(/[đ]/g, "d")
+          .replace(/\s+/g, "");
       };
 
       const cleanRole = normalizeRole(role);
 
+      // Danh sách role được vào dashboard
+      const dashboardRoles = [
+        "giamdoc",
+        "truongphong",
+        "ketoantruong",
+        "nhansutruong",
+      ];
+
       if (cleanRole === "nhanvien") {
         navigate(`/employee-home/${maNhanVien}`);
-      } else if (roleMap[cleanRole]) {
+      } else if (dashboardRoles.includes(cleanRole)) {
         navigate("/dashboard");
       } else {
         setError("Role không được hỗ trợ: " + role);
@@ -52,7 +58,7 @@ const LoginPage = () => {
       }
     } catch (err) {
       setError(
-        err.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại."
+        err.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.",
       );
     } finally {
       setLoading(false);

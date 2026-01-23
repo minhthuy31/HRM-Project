@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../api";
-// import { getUserFromToken } from "../utils/auth";
-// import { useNavigate } from "react-router-dom";
+import { getUserFromToken } from "../utils/auth";
 import {
   FaEye,
   FaEdit,
@@ -25,7 +24,9 @@ const getImageUrl = (path) => {
 };
 
 // --- ContextMenu ---
-const ContextMenu = ({ employee, onAction, onClose, x, y }) => {
+// Lưu ý: Prop truyền vào nên thống nhất tên, ở đây tôi dùng 'canModify' cho prop,
+// nhưng bên trong component cha ta sẽ truyền giá trị của biến 'isHRManager' vào prop này.
+const ContextMenu = ({ employee, onAction, onClose, x, y, canModify }) => {
   useEffect(() => {
     const handleClickOutside = () => onClose();
     document.addEventListener("click", handleClickOutside);
@@ -38,21 +39,28 @@ const ContextMenu = ({ employee, onAction, onClose, x, y }) => {
         <li onClick={() => onAction("view", employee)}>
           <FaEye /> Xem chi tiết
         </li>
-        <li onClick={() => onAction("edit", employee)}>
-          <FaEdit /> Chỉnh sửa
-        </li>
-        <li onClick={() => onAction("delete", employee)}>
-          <FaTrash /> Vô hiệu hóa
-        </li>
+        {/* Chỉ hiện chức năng sửa/xóa nếu có quyền */}
+        {canModify && (
+          <>
+            <li onClick={() => onAction("edit", employee)}>
+              <FaEdit /> Chỉnh sửa
+            </li>
+            <li onClick={() => onAction("delete", employee)}>
+              <FaTrash /> Vô hiệu hóa
+            </li>
+          </>
+        )}
       </ul>
       <hr />
       <ul>
         <li onClick={() => onAction("view-external", employee)}>
           <FaEye /> Xem chi tiết ngoài
         </li>
-        <li onClick={() => onAction("edit-external", employee)}>
-          <FaEdit /> Chỉnh sửa ngoài
-        </li>
+        {canModify && (
+          <li onClick={() => onAction("edit-external", employee)}>
+            <FaEdit /> Chỉnh sửa ngoài
+          </li>
+        )}
       </ul>
     </div>
   );
@@ -66,10 +74,16 @@ const EmployeePage = () => {
   const [chuyenNganhs, setChuyenNganhs] = useState([]);
   const [trinhDoHocVans, setTrinhDoHocVans] = useState([]);
   const [hopDongs, setHopDongs] = useState([]);
-  const [managers, setManagers] = useState([]); // State mới cho danh sách quản lý
+  const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
-  // const navigate = useNavigate();
-  // const currentUser = getUserFromToken();
+
+  // --- LOGIC PHÂN QUYỀN ---
+  const user = getUserFromToken();
+  const userRole = user?.role || user?.Role || "";
+
+  // SỬA LỖI Ở ĐÂY: Đặt tên biến là 'isHRManager' để khớp với các đoạn code bên dưới
+  // Logic: Nhân sự trưởng HOẶC Giám đốc đều có quyền quản lý
+  const isHRManager = userRole === "Nhân sự trưởng" || userRole === "Giám đốc";
 
   const [activeMenu, setActiveMenu] = useState({
     id: null,
@@ -102,7 +116,6 @@ const EmployeePage = () => {
       if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
       const employeeUrl = `/NhanVien?${params.toString()}`;
 
-      // Gọi thêm API lấy danh sách quản lý (/NhanVien/managers)
       const [empRes, pbRes, cvRes, cnRes, tdRes, hdRes, mgrRes] =
         await Promise.all([
           api.get(employeeUrl),
@@ -120,9 +133,12 @@ const EmployeePage = () => {
       setChuyenNganhs(cnRes.data);
       setTrinhDoHocVans(tdRes.data);
       setHopDongs(hdRes.data);
-      setManagers(mgrRes.data); // Set dữ liệu quản lý
+      setManagers(mgrRes.data);
     } catch (error) {
       console.error("Failed to fetch data", error);
+      if (error.response && error.response.status === 403) {
+        alert("Bạn không có quyền truy cập dữ liệu này.");
+      }
     } finally {
       setLoading(false);
     }
@@ -139,7 +155,6 @@ const EmployeePage = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  //hàm chung xử lý lọc
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prevFilters) => ({
@@ -188,6 +203,18 @@ const EmployeePage = () => {
       return;
     }
 
+    // --- CHECK QUYỀN TRƯỚC KHI THỰC HIỆN ACTION ---
+    // Sử dụng biến isHRManager ở đây (đã định nghĩa ở trên)
+    if (
+      (actionType === "edit" ||
+        actionType === "delete" ||
+        actionType === "edit-external") &&
+      !isHRManager
+    ) {
+      alert("Bạn không có quyền thực hiện chức năng này.");
+      return;
+    }
+
     if (actionType === "edit") {
       try {
         const response = await api.get(`/NhanVien/${employee.maNhanVien}`);
@@ -201,14 +228,14 @@ const EmployeePage = () => {
     if (actionType === "delete") {
       if (
         window.confirm(
-          `Bạn có chắc muốn vô hiệu hóa nhân viên ${employee.hoTen}?`
+          `Bạn có chắc muốn vô hiệu hóa nhân viên ${employee.hoTen}?`,
         )
       ) {
         try {
           await api.delete(`/NhanVien/${employee.maNhanVien}`);
           fetchData();
         } catch (error) {
-          alert(error.response?.data || "Lỗi khi vô hiệu hóa.");
+          alert(error.response?.data?.message || "Lỗi khi vô hiệu hóa.");
         }
       }
       return;
@@ -226,6 +253,12 @@ const EmployeePage = () => {
   };
 
   const handleSave = async (employeeData, imageFile) => {
+    // Sử dụng biến isHRManager
+    if (!isHRManager) {
+      alert("Bạn không có quyền lưu thay đổi.");
+      return;
+    }
+
     const dataToSave = {
       ...employeeData,
       trangThai: employeeData.trangThai.toString() === "true",
@@ -249,7 +282,7 @@ const EmployeePage = () => {
     } catch (error) {
       const errorMsg = error.response?.data?.errors
         ? JSON.stringify(error.response.data.errors)
-        : error.response?.data || "Lưu thất bại!";
+        : error.response?.data?.message || "Lưu thất bại!";
       alert(errorMsg);
     }
   };
@@ -264,7 +297,6 @@ const EmployeePage = () => {
       return new Date(dateString).toLocaleDateString("vi-VN");
     };
 
-    // Cập nhật Export Excel với các trường mới
     const dataToExport = employees.map((emp) => {
       return {
         "Mã NV": emp.maNhanVien,
@@ -279,45 +311,37 @@ const EmployeePage = () => {
         "Nơi Sinh": emp.noiSinh,
         "Tình Trạng Hôn Nhân": emp.tinhTrangHonNhan,
         "Quê Quán": emp.queQuan,
-
         "Địa Chỉ Thường Trú": emp.diaChiThuongTru,
         "Phường/Xã TT": emp.phuongXaThuongTru,
         "Quận/Huyện TT": emp.quanHuyenThuongTru,
         "Tỉnh/Thành TT": emp.tinhThanhThuongTru,
         "Quốc Gia TT": emp.quocGiaThuongTru,
         "Địa Chỉ Tạm Trú": emp.diaChiTamTru,
-
         CCCD: emp.cccd,
         "Ngày Cấp CCCD": formatDate(emp.ngayCapCCCD),
         "Nơi Cấp CCCD": emp.noiCapCCCD,
         "Ngày Hết Hạn CCCD": formatDate(emp.ngayHetHanCCCD),
-
         "Số Hộ Chiếu": emp.soHoChieu,
         "Ngày Cấp HC": formatDate(emp.ngayCapHoChieu),
         "Nơi Cấp HC": emp.noiCapHoChieu,
         "Ngày Hết Hạn HC": formatDate(emp.ngayHetHanHoChieu),
-
         "Loại Nhân Viên": emp.loaiNhanVien,
         "Trạng Thái": emp.trangThai ? "Hoạt động" : "Đã nghỉ",
         "Phòng Ban": emp.tenPhongBan,
         "Chức Vụ": emp.tenChucVu,
-        "Quản Lý Trực Tiếp": emp.tenQuanLyTrucTiep, // Trường mới
+        "Quản Lý Trực Tiếp": emp.tenQuanLyTrucTiep,
         "Ngày Vào Làm": formatDate(emp.ngayVaoLam),
         "Ngày Nghỉ Việc": formatDate(emp.ngayNghiViec),
-
         "Trình Độ": emp.tenTrinhDoHocVan,
         "Chuyên Ngành": emp.tenChuyenNganh,
         "Nơi Đào Tạo": emp.noiDaoTao,
         "Hệ Đào Tạo": emp.heDaoTao,
-
         "Số Tài Khoản NH": emp.soTaiKhoanNH,
         "Tên Ngân Hàng": emp.tenNganHang,
         "Tên Tài Khoản NH": emp.tenTaiKhoanNH,
-
         "Số BHYT": emp.soBHYT,
         "Số BHXH": emp.soBHXH,
         "Nơi ĐK KCB": emp.noiDKKCB,
-
         "Người Liên Hệ KC": emp.nguoiLienHeKhanCap,
         "SĐT KC": emp.sdtKhanCap,
         "Quan Hệ KC": emp.quanHeKhanCap,
@@ -326,7 +350,6 @@ const EmployeePage = () => {
     });
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
-    // Điều chỉnh độ rộng cột (ước lượng)
     const cols = Object.keys(dataToExport[0]).map(() => ({ wch: 20 }));
     ws["!cols"] = cols;
 
@@ -341,12 +364,11 @@ const EmployeePage = () => {
   const findIdByName = (list, name, nameField, idField) => {
     if (!name) return null;
     const item = list.find(
-      (i) => i[nameField]?.toLowerCase() === name.toLowerCase()
+      (i) => i[nameField]?.toLowerCase() === name.toLowerCase(),
     );
     return item ? item[idField] : null;
   };
 
-  // Hàm hỗ trợ chuyển đổi ngày tháng từ Excel
   const excelDateToJSDate = (serial) => {
     if (typeof serial === "number") {
       const utc_days = Math.floor(serial - 25569);
@@ -355,7 +377,7 @@ const EmployeePage = () => {
       return new Date(
         date_info.getFullYear(),
         date_info.getMonth(),
-        date_info.getDate() + 1
+        date_info.getDate() + 1,
       );
     } else if (typeof serial === "string") {
       const parts = serial.split("/");
@@ -367,6 +389,12 @@ const EmployeePage = () => {
   };
 
   const handleImportExcel = (e) => {
+    // Sử dụng biến isHRManager
+    if (!isHRManager) {
+      alert("Bạn không có quyền nhập dữ liệu.");
+      return;
+    }
+
     const file = e.target.files[0];
     if (!file) return;
 
@@ -381,30 +409,29 @@ const EmployeePage = () => {
         const json = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
         const employeesToImport = json.map((row) => {
-          // Map các khoá ngoại cơ bản
           const maPB = findIdByName(
             phongBans,
             row["Phòng Ban"],
             "tenPhongBan",
-            "maPhongBan"
+            "maPhongBan",
           );
           const maCV = findIdByName(
             chucVus,
             row["Chức Vụ"],
             "tenChucVu",
-            "maChucVuNV"
+            "maChucVuNV",
           );
           const maTD = findIdByName(
             trinhDoHocVans,
             row["Trình Độ"],
             "tenTrinhDo",
-            "maTrinhDoHocVan"
+            "maTrinhDoHocVan",
           );
           const maCN = findIdByName(
             chuyenNganhs,
             row["Chuyên Ngành"],
             "tenChuyenNganh",
-            "maChuyenNganh"
+            "maChuyenNganh",
           );
 
           return {
@@ -419,43 +446,35 @@ const EmployeePage = () => {
             noiSinh: row["Nơi Sinh"],
             tinhTrangHonNhan: row["Tình Trạng Hôn Nhân"],
             queQuan: row["Quê Quán"],
-
             diaChiThuongTru: row["Địa Chỉ Thường Trú"],
             phuongXaThuongTru: row["Phường/Xã TT"],
             quanHuyenThuongTru: row["Quận/Huyện TT"],
             tinhThanhThuongTru: row["Tỉnh/Thành TT"],
             quocGiaThuongTru: row["Quốc Gia TT"],
             diaChiTamTru: row["Địa Chỉ Tạm Trú"],
-
             cccd: row["CCCD"],
             ngayCapCCCD: excelDateToJSDate(row["Ngày Cấp CCCD"]),
             noiCapCCCD: row["Nơi Cấp CCCD"],
             ngayHetHanCCCD: excelDateToJSDate(row["Ngày Hết Hạn CCCD"]),
-
             soHoChieu: row["Số Hộ Chiếu"],
             ngayCapHoChieu: excelDateToJSDate(row["Ngày Cấp HC"]),
             noiCapHoChieu: row["Nơi Cấp HC"],
             ngayHetHanHoChieu: excelDateToJSDate(row["Ngày Hết Hạn HC"]),
-
             loaiNhanVien: row["Loại Nhân Viên"],
             maPhongBan: maPB,
             maChucVuNV: maCV,
             maTrinhDoHocVan: maTD,
             maChuyenNganh: maCN,
-
             soTaiKhoanNH: row["Số Tài Khoản NH"],
             tenNganHang: row["Tên Ngân Hàng"],
             tenTaiKhoanNH: row["Tên Tài Khoản NH"],
-
             soBHYT: row["Số BHYT"],
             soBHXH: row["Số BHXH"],
             noiDKKCB: row["Nơi ĐK KCB"],
-
             nguoiLienHeKhanCap: row["Người Liên Hệ KC"],
             sdtKhanCap: row["SĐT KC"],
             quanHeKhanCap: row["Quan Hệ KC"],
             diaChiKhanCap: row["Địa Chỉ KC"],
-
             trangThai: row["Trạng Thái"]
               ? row["Trạng Thái"].toLowerCase() === "hoạt động"
               : true,
@@ -464,16 +483,14 @@ const EmployeePage = () => {
         });
 
         const validEmployees = employeesToImport.filter(
-          (emp) => emp.maPhongBan && emp.maChucVuNV && emp.hoTen
+          (emp) => emp.maPhongBan && emp.maChucVuNV && emp.hoTen,
         );
         const invalidCount = employeesToImport.length - validEmployees.length;
 
-        if (invalidCount > 0) {
+        if (invalidCount > 0)
           alert(
-            `Cảnh báo: ${invalidCount} nhân viên không thể nhập do thiếu/sai tên Phòng Ban, Chức Vụ hoặc Họ Tên. Chỉ nhập ${validEmployees.length} nhân viên hợp lệ.`
+            `Cảnh báo: ${invalidCount} nhân viên không thể nhập do thiếu/sai tên.`,
           );
-        }
-
         if (validEmployees.length === 0) {
           alert("Không có nhân viên nào hợp lệ để nhập.");
           setLoading(false);
@@ -487,7 +504,7 @@ const EmployeePage = () => {
         console.error("Lỗi khi nhập Excel:", err);
         alert(
           "Đã xảy ra lỗi khi đọc hoặc gửi file. " +
-            (err.response?.data?.message || "")
+            (err.response?.data?.message || ""),
         );
       } finally {
         setLoading(false);
@@ -500,12 +517,9 @@ const EmployeePage = () => {
   return (
     <DashboardLayout>
       <div className="employee-page">
-        {/* --- PAGE HEADER MỚI --- */}
         <div className="page-header">
-          {/* HÀNG 1: Tiêu đề + Search + Action Buttons */}
           <div className="header-top-row">
             <h1>Quản lý nhân viên</h1>
-
             <div className="header-actions">
               <form onSubmit={handleSearchSubmit} className="search-form">
                 <div className="search-container">
@@ -520,21 +534,26 @@ const EmployeePage = () => {
               </form>
 
               <div className="action-buttons-group">
-                <button
-                  onClick={() =>
-                    document.getElementById("import-excel-input").click()
-                  }
-                  className="add-btn btn-import"
-                >
-                  <FaUpload /> Nhập
-                </button>
-                <input
-                  type="file"
-                  id="import-excel-input"
-                  style={{ display: "none" }}
-                  accept=".xlsx, .xls"
-                  onChange={handleImportExcel}
-                />
+                {/* Sử dụng biến isHRManager */}
+                {isHRManager && (
+                  <>
+                    <button
+                      onClick={() =>
+                        document.getElementById("import-excel-input").click()
+                      }
+                      className="add-btn btn-import"
+                    >
+                      <FaUpload /> Nhập
+                    </button>
+                    <input
+                      type="file"
+                      id="import-excel-input"
+                      style={{ display: "none" }}
+                      accept=".xlsx, .xls"
+                      onChange={handleImportExcel}
+                    />
+                  </>
+                )}
 
                 <button
                   onClick={handleExportExcel}
@@ -543,17 +562,19 @@ const EmployeePage = () => {
                   <FaDownload /> Xuất
                 </button>
 
-                <button
-                  onClick={() => setModal({ type: "edit", data: null })}
-                  className="add-btn btn-add"
-                >
-                  <FaPlus /> Thêm mới
-                </button>
+                {/* Sử dụng biến isHRManager */}
+                {isHRManager && (
+                  <button
+                    onClick={() => setModal({ type: "edit", data: null })}
+                    className="add-btn btn-add"
+                  >
+                    <FaPlus /> Thêm mới
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* HÀNG 2: Filters */}
           <div className="header-bottom-row">
             <div className="filter-item">
               <select
@@ -569,7 +590,6 @@ const EmployeePage = () => {
                 ))}
               </select>
             </div>
-
             <div className="filter-item">
               <select
                 name="selectedChucVu"
@@ -584,7 +604,6 @@ const EmployeePage = () => {
                 ))}
               </select>
             </div>
-
             <div className="filter-item">
               <select
                 name="selectedTrangThai"
@@ -596,7 +615,6 @@ const EmployeePage = () => {
                 <option value="false">Đã nghỉ</option>
               </select>
             </div>
-
             <div className="filter-item">
               <select
                 name="selectedTrinhDo"
@@ -653,11 +671,7 @@ const EmployeePage = () => {
                     <td>{emp.maNhanVien}</td>
                     <td>{emp.tenChucVu}</td>
                     <td>{emp.tenPhongBan}</td>
-                    <td
-                      style={{
-                        color: emp.trangThai ? "green" : "red",
-                      }}
-                    >
+                    <td style={{ color: emp.trangThai ? "green" : "red" }}>
                       {emp.trangThai ? "Hoạt động" : "Đã nghỉ"}
                     </td>
                     <td className="actions-cell">
@@ -683,6 +697,7 @@ const EmployeePage = () => {
           onClose={() => setActiveMenu({ id: null, x: 0, y: 0 })}
           x={activeMenu.x}
           y={activeMenu.y}
+          canModify={isHRManager} // Truyền quyền sửa xuống ContextMenu
         />
       )}
 
@@ -691,13 +706,14 @@ const EmployeePage = () => {
           employee={modal.data}
           onCancel={() => setModal({ type: null, data: null })}
           onSave={handleSave}
-          isViewOnly={modal.type === "view"}
+          // Chỉ cho phép sửa nếu modal không phải view VÀ user là HR Manager (hoặc Giám đốc)
+          isViewOnly={modal.type === "view" || !isHRManager}
           phongBans={phongBans}
           chucVus={chucVus}
           chuyenNganhs={chuyenNganhs}
           trinhDoHocVans={trinhDoHocVans}
           hopDongs={hopDongs}
-          managers={managers} // Truyền danh sách quản lý vào modal
+          managers={managers}
         />
       )}
     </DashboardLayout>

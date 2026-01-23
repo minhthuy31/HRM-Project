@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import "../../styles/Modal.css"; // Dùng chung CSS Modal cũ hoặc tạo mới
+import { api } from "../../api"; // Đảm bảo import đúng đường dẫn api của bạn
+import "../../styles/Modal.css";
 
-const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
+const LeaveRequestModal = ({ onSave, onCancel }) => {
   const today = new Date().toISOString().split("T")[0];
   const [formData, setFormData] = useState({
     ngayBatDau: today,
@@ -12,6 +13,10 @@ const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
     file: null,
   });
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
+
+  // --- THÊM STATE NÀY ĐỂ LƯU SỐ PHÉP LẤY TỪ API ---
+  const [fetchedRemainingDays, setFetchedRemainingDays] = useState(null);
 
   const predefinedReasons = [
     "Nghỉ ốm",
@@ -21,6 +26,20 @@ const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
     "Khác (ghi rõ lý do)",
   ];
 
+  // --- GỌI API LẤY SỐ PHÉP KHI MODAL MỞ RA ---
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const response = await api.get("/DonNghiPhep/balance");
+        setFetchedRemainingDays(response.data.remainingDays);
+      } catch (err) {
+        console.error("Lỗi lấy số dư phép:", err);
+        setFetchedRemainingDays(0); // Fallback nếu lỗi
+      }
+    };
+    fetchBalance();
+  }, []);
+
   // Hàm tính số ngày làm việc (trừ T7, CN)
   const calculateBusinessDays = (startDate, endDate) => {
     let count = 0;
@@ -29,7 +48,6 @@ const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
 
     while (curDate <= end) {
       const dayOfWeek = curDate.getDay();
-      // 0: CN, 6: T7 -> Chỉ đếm từ thứ 2 (1) đến thứ 6 (5)
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         count++;
       }
@@ -48,13 +66,29 @@ const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
         setError("Ngày kết thúc không thể trước ngày bắt đầu.");
         setFormData((prev) => ({ ...prev, soNgayNghi: 0 }));
       } else {
-        // Tự động trừ T7/CN để khớp với logic chấm công backend
         const days = calculateBusinessDays(start, end);
         setFormData((prev) => ({ ...prev, soNgayNghi: days }));
         setError("");
       }
     }
   }, [formData.ngayBatDau, formData.ngayKetThuc]);
+
+  // Check cảnh báo dựa trên số phép vừa lấy được
+  useEffect(() => {
+    // Sử dụng fetchedRemainingDays thay vì prop cũ
+    if (formData.lyDo === "Nghỉ phép năm" && fetchedRemainingDays !== null) {
+      if (formData.soNgayNghi > fetchedRemainingDays) {
+        const diff = formData.soNgayNghi - fetchedRemainingDays;
+        setWarning(
+          `Bạn chỉ còn ${fetchedRemainingDays} ngày phép. ${diff} ngày vượt quá sẽ tính là nghỉ không lương.`,
+        );
+      } else {
+        setWarning("");
+      }
+    } else {
+      setWarning("");
+    }
+  }, [formData.soNgayNghi, formData.lyDo, fetchedRemainingDays]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -83,18 +117,6 @@ const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
       return;
     }
 
-    // Check phép năm
-    if (formData.lyDo === "Nghỉ phép năm") {
-      if (
-        remainingLeaveDays !== undefined &&
-        formData.soNgayNghi > remainingLeaveDays
-      ) {
-        setError(`Số ngày phép còn lại (${remainingLeaveDays}) không đủ.`);
-        return;
-      }
-    }
-
-    // Dữ liệu chuẩn bị gửi đi
     const submissionData = {
       ngayBatDau: formData.ngayBatDau,
       ngayKetThuc: formData.ngayKetThuc,
@@ -118,11 +140,33 @@ const LeaveRequestModal = ({ onSave, onCancel, remainingLeaveDays }) => {
 
         {error && <div className="modal-error">{error}</div>}
 
+        {warning && (
+          <div
+            className="modal-warning"
+            style={{
+              color: "#d97706",
+              backgroundColor: "#fffbeb",
+              padding: "10px",
+              borderRadius: "4px",
+              marginBottom: "10px",
+              border: "1px solid #fcd34d",
+              fontSize: "13px",
+            }}
+          >
+            <i className="fa fa-exclamation-triangle"></i> {warning}
+          </div>
+        )}
+
         <div
           className="leave-balance-info"
-          style={{ color: "#0e7c7b", marginBottom: "15px" }}
+          style={{ color: "#0e7c7b", marginBottom: "15px", fontSize: "14px" }}
         >
-          Phép năm còn lại: <strong>{remainingLeaveDays ?? "..."}</strong> ngày
+          {/* HIỂN THỊ SỐ LIỆU TỪ STATE */}
+          Phép năm còn lại:{" "}
+          <strong>
+            {fetchedRemainingDays !== null ? fetchedRemainingDays : "..."}
+          </strong>{" "}
+          ngày
         </div>
 
         <div className="form-group-row">
