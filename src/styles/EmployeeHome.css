@@ -18,6 +18,7 @@
   --shadow-color: rgba(0, 0, 0, 0.08);
   --avatar-bg: #e0f2fe;
   --avatar-text: #0c4a6e;
+  --sidebar-width: 280px;
 }
 
 /* 1. Bố cục trang gốc */
@@ -110,35 +111,55 @@
   background-color: var(--hover-bg);
 }
 
-/* 3. Bố cục nội dung chính (Gồm 3 cột) */
+/* 3. Bố cục nội dung chính (Gồm 2 cột) */
 .employee-main-content {
   display: flex;
-  flex: 1; /* Quan trọng: Chiếm hết không gian còn lại */
-  min-height: 0; /* Quan trọng: Bắt buộc để flex child cuộn */
-  overflow: hidden; /* Ngăn chính nó cuộn */
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-color: #f3f4f6;
 }
 
 /* 4. Sidebar Trái (Thông tin user) */
 .left-sidebar {
-  width: 260px;
+  width: var(--sidebar-width, 280px); /* Dùng biến hoặc set cứng 280px */
   flex-shrink: 0;
-  padding: 20px;
+  padding: 24px; /* Tăng padding chút cho thoáng */
   background-color: var(--card-bg, #ffffff);
   border-right: 1px solid var(--sidebar-border, #e0e0e0);
-  overflow-y: auto; /* Cho phép sidebar trái cuộn nếu cần */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Khoảng cách giữa các khối trong sidebar */
 }
 
-.profile-summary { text-align: center; margin-bottom: 20px; }
+/* Tinh chỉnh Profile Summary */
+.profile-summary {
+  text-align: center;
+  margin-bottom: 10px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--sidebar-border); /* Thêm gạch ngăn cách nhẹ */
+}
 .profile-avatar {
-  width: 100px;
-  height: 100px;
+  width: 90px;  
+  height: 90px; 
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 12px;
-  border: 3px solid var(--sidebar-border, #e0e0e0);
+  margin-bottom: 12px;   
+  border: 3px solid white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-.profile-summary h3 { margin: 10px 0 5px 0; font-size: 1.2rem; }
-.profile-summary p { margin: 0; color: #6b7280; }
+.profile-summary h3 {
+  margin: 5px 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--main-text);
+}
+.profile-summary p {
+  margin: 0;
+  color: #6b7280;
+  font-weight: 500;
+}
 
 .action-buttons {
   display: flex;
@@ -150,22 +171,24 @@
 /* === SỬA LỖI GHI ĐÈ MÀU (Lần 3 - Chính xác) === */
 /* 1. Đổi selector thành .left-sidebar .action-buttons .action-btn */
 /* Điều này CHỈ áp dụng cho các nút trong sidebar trái */
-.left-sidebar .action-buttons .action-btn { 
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 6px;
+/* Nút bấm sidebar (Đã chỉnh căn giữa text) */
+.left-sidebar .action-buttons .sidebar-action-btn {
+  width: 100%;
+  padding: 10px 14px; /* Giảm padding một chút (cũ là 12px 16px) */
+  font-size: 14px !important;
+  font-weight: 600;
+  border-radius: 10px; /* Bo tròn mềm mại hơn */
+  border: none;
+  color: white;
   
-  /* 2. Đặt làm nút MÀU XANH DƯƠNG */
-  border: 1px solid var(--hover-text, #0d6efd);
-  background-color: var(--hover-text, #0d6efd);
-  color: white; 
-  /* --------------------------------------------- */
-
+  display: flex;            
+  align-items: center;      
+  justify-content: center;  
+  
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Bóng nhẹ */
 }
-
 /* 3. Đổi selector :hover tương ứng */
 .left-sidebar .action-buttons .action-btn:hover {
   /* 4. Đổi hover sang màu XANH ĐẬM */
@@ -204,11 +227,10 @@
 
 /* 5. Cột Nội dung chính (Outlet) */
 .main-feed {
-  flex: 1; /* Quan trọng: Chiếm hết không gian còn lại */
-  overflow: auto; /* Quan trọng: Đây là vùng cuộn chính */
+  flex: 1; /* Chiếm toàn bộ không gian còn lại */
+  overflow: auto;
   min-height: 0;
-  padding: 20px; /* Thêm padding cho nội dung bên trong */
-  box-sizing: border-box;
+  padding: 30px 40px;
 }
 
 /* 6. Sidebar Phải (Trống) */
@@ -433,15 +455,21 @@
 /* NÚT LỚN TRONG SIDEBAR – KHÔNG BAO GIỜ BỊ GHI ĐÈ */
 .sidebar-action-btn {
   width: 100%;
-  padding: 14px 16px;
-  font-size: 15px;
+  padding: 12px 16px;
+  font-size: 18px !important;
   font-weight: 600;
   border-radius: 8px;
   border: none;
   color: white;
-  cursor: center;
+  
+  display: flex;             /* Bật Flexbox */
+  align-items: center;       /* Canh giữa theo chiều dọc */
+  justify-content: center;   /* Canh giữa theo chiều ngang (text sẽ vào giữa) */
+  /* ------------------------------------------- */
+
+  cursor: pointer;           /* Sửa "center" thành "pointer" (lỗi nhỏ trong code cũ) */
   transition: all 0.2s ease;
-  text-align: center;
+  text-align: center;        /* Fallback cho trường hợp không có flex */
 }
 
 /* Nút xanh dương mặc định */

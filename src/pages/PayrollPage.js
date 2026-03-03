@@ -52,14 +52,14 @@ const PayrollPage = () => {
 
         // CHẤM CÔNG
         tongNgayCong: item.tongNgayCong || 0,
-        tongGioOT: item.tongGioOT || 0, // <--- THÊM MỚI
+        tongGioOT: item.tongGioOT || 0, //
         nghiCoPhep: item.nghiCoPhep || 0,
         nghiKhongPhep: item.nghiKhongPhep || 0,
         lamNuaNgay: item.lamNuaNgay || 0,
 
         // THU NHẬP
         luongChinh: item.luongChinh || 0,
-        luongOT: item.luongOT || 0, // <--- THÊM MỚI
+        luongOT: item.luongOT || 0, //
         tongThuNhap: item.tongThuNhap || 0,
 
         // KHẤU TRỪ

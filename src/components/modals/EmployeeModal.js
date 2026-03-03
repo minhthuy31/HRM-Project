@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaTimes, FaUserCircle, FaCamera } from "react-icons/fa";
+import { FaTimes, FaUserCircle, FaCamera, FaPenNib } from "react-icons/fa"; // Thêm icon FaPenNib
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/EmployeeModal.css";
 
 const getImageUrl = (path) => {
   if (!path) return null;
+  if (path.startsWith("data:image")) return path; // Support Base64 (Chữ ký)
   if (path.startsWith("blob:")) return path;
   return `http://localhost:5260${path}`;
 };
@@ -42,6 +43,7 @@ const EmployeeModal = ({
               ? employee.luongTroCap
               : "",
           soHopDong: employee.soHopDong || "",
+          chuKy: employee.chuKy || null, // Lấy chữ ký từ prop employee
         }
       : {
           trangThai: true,
@@ -49,6 +51,7 @@ const EmployeeModal = ({
           luongCoBan: "",
           luongTroCap: "",
           soHopDong: "",
+          chuKy: null,
         };
 
     setFormData(initialData);
@@ -67,12 +70,11 @@ const EmployeeModal = ({
   // --- XỬ LÝ NHẬP TIỀN TỆ (Chỉ nhận số) ---
   const handleCurrencyChange = (e) => {
     const { name, value } = e.target;
-    // Loại bỏ tất cả ký tự không phải số
     const rawValue = value.replace(/\D/g, "");
     setFormData((prev) => ({ ...prev, [name]: rawValue }));
   };
 
-  // --- HÀM FORMAT TIỀN TỆ (Hiển thị 5 000 000) ---
+  // --- HÀM FORMAT TIỀN TỆ ---
   const formatCurrency = (value) => {
     if (value === undefined || value === null || value === "") return "";
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -92,18 +94,14 @@ const EmployeeModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Xử lý dữ liệu trước khi gửi (convert lương sang số)
     const dataToSubmit = { ...formData };
 
-    // Convert Lương Cơ Bản
     if (dataToSubmit.luongCoBan !== "" && dataToSubmit.luongCoBan !== null) {
       dataToSubmit.luongCoBan = parseFloat(dataToSubmit.luongCoBan);
     } else {
       dataToSubmit.luongCoBan = 0;
     }
 
-    // Convert Lương Trợ Cấp
     if (dataToSubmit.luongTroCap !== "" && dataToSubmit.luongTroCap !== null) {
       dataToSubmit.luongTroCap = parseFloat(dataToSubmit.luongTroCap);
     } else {
@@ -113,7 +111,7 @@ const EmployeeModal = ({
     onSave(dataToSubmit, selectedFile);
   };
 
-  // --- MENU CONFIGURATION ---
+  // --- MENU CONFIGURATION (THÊM TAB CHỮ KÝ) ---
   const tabs = [
     { id: "personal", label: "Thông tin cá nhân" },
     { id: "identity", label: "Giấy tờ tùy thân" },
@@ -122,9 +120,13 @@ const EmployeeModal = ({
     { id: "bank", label: "Thông tin tài khoản" },
     { id: "education", label: "Trình độ học vấn" },
     { id: "insurance", label: "Bảo hiểm" },
+    { id: "signature", label: "Chữ ký số" }, // <--- MỚI
   ];
 
-  // 1. Thông tin cá nhân
+  // ... (Giữ nguyên các hàm renderPersonal, renderIdentity, renderContact, renderJob, renderBank, renderEducation, renderInsurance) ...
+  // Để tiết kiệm không gian, tôi chỉ liệt kê phần renderPersonal (đã có trong code gốc) và các phần khác bạn giữ nguyên.
+  // ...
+
   const renderPersonal = () => (
     <div className="tab-content">
       <div className="form-section-title">Thông tin cơ bản</div>
@@ -304,7 +306,6 @@ const EmployeeModal = ({
     </div>
   );
 
-  // 2. Giấy tờ tùy thân
   const renderIdentity = () => (
     <div className="tab-content">
       <div className="form-section-title">Thẻ CCCD / CMND</div>
@@ -403,7 +404,6 @@ const EmployeeModal = ({
     </div>
   );
 
-  // 3. Liên hệ
   const renderContact = () => (
     <div className="tab-content">
       <div className="form-section-title">Thông tin liên hệ chính</div>
@@ -536,7 +536,6 @@ const EmployeeModal = ({
     </div>
   );
 
-  // 4. Quá trình làm việc & Hợp đồng (ĐÃ CẬP NHẬT)
   const renderJob = () => (
     <div className="tab-content">
       <div className="form-section-title">Thông tin quản lý</div>
@@ -618,7 +617,6 @@ const EmployeeModal = ({
         </div>
       </div>
 
-      {/* --- PHẦN BỔ SUNG: LƯƠNG & HỢP ĐỒNG --- */}
       <div className="form-section-title" style={{ marginTop: "20px" }}>
         Lương & Hợp đồng
       </div>
@@ -634,7 +632,6 @@ const EmployeeModal = ({
             placeholder="Nhập mức lương..."
           />
         </div>
-        {/* --- Ô NHẬP TRỢ CẤP MỚI (Đã sửa name và value) --- */}
         <div className="form-group">
           <label>Lương trợ cấp (VNĐ)</label>
           <input
@@ -661,7 +658,6 @@ const EmployeeModal = ({
     </div>
   );
 
-  // 5. Thông tin tài khoản
   const renderBank = () => (
     <div className="tab-content">
       <div className="form-section-title">Tài khoản ngân hàng</div>
@@ -697,7 +693,6 @@ const EmployeeModal = ({
     </div>
   );
 
-  // 6. Trình độ học vấn
   const renderEducation = () => (
     <div className="tab-content">
       <div className="form-section-title">Học vấn</div>
@@ -766,7 +761,6 @@ const EmployeeModal = ({
     </div>
   );
 
-  // 7. Bảo hiểm
   const renderInsurance = () => (
     <div className="tab-content">
       <div className="form-section-title">Thông tin bảo hiểm</div>
@@ -802,6 +796,59 @@ const EmployeeModal = ({
     </div>
   );
 
+  // --- 8. PHẦN MỚI: TAB CHỮ KÝ ---
+  const renderSignature = () => (
+    <div className="tab-content">
+      <div className="form-section-title">Chữ ký điện tử</div>
+      <div
+        className="signature-display-box"
+        style={{
+          border: "2px dashed #ccc",
+          borderRadius: "8px",
+          padding: "20px",
+          textAlign: "center",
+          backgroundColor: "#f9fafb",
+          height: "200px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+        }}
+      >
+        {formData.chuKy ? (
+          <img
+            src={getImageUrl(formData.chuKy)}
+            alt="Chữ ký nhân viên"
+            style={{
+              maxWidth: "100%",
+              maxHeight: "150px",
+              objectFit: "contain",
+            }}
+          />
+        ) : (
+          <>
+            <FaPenNib
+              size={40}
+              color="#cbd5e1"
+              style={{ marginBottom: "10px" }}
+            />
+            <span style={{ color: "#94a3b8", fontStyle: "italic" }}>
+              Nhân viên chưa có chữ ký số.
+            </span>
+            {!isViewOnly && (
+              <div
+                style={{ fontSize: "12px", color: "#64748b", marginTop: "5px" }}
+              >
+                (Vui lòng cập nhật tại màn hình danh sách nhân viên: Chuột phải{" "}
+                {"->"} Cập nhật chữ ký)
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   // Switch render content based on activeTab
   const renderContent = () => {
     switch (activeTab) {
@@ -819,6 +866,8 @@ const EmployeeModal = ({
         return renderEducation();
       case "insurance":
         return renderInsurance();
+      case "signature": // <--- CASE MỚI
+        return renderSignature();
       default:
         return null;
     }

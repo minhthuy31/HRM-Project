@@ -21,18 +21,19 @@ const ContractManagementPage = () => {
 
   // State bộ lọc & tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("HieuLuc"); // Mặc định hiện cái còn hiệu lực
+  const [statusFilter, setStatusFilter] = useState("HieuLuc");
 
   // State Modal & Preview
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
   const [printingContract, setPrintingContract] = useState(null);
 
+  // --- 1. THÊM STATE LƯU THÔNG TIN GIÁM ĐỐC ---
+  const [directorInfo, setDirectorInfo] = useState(null);
+
   // --- PHÂN QUYỀN ---
   const user = getUserFromToken();
   const userRole = user?.role || user?.Role || "";
-
-  // Chỉ Giám đốc và HR mới được Thêm/Sửa
   const canModify = ["Giám đốc", "Tổng giám đốc", "Nhân sự trưởng"].includes(
     userRole,
   );
@@ -41,7 +42,6 @@ const ContractManagementPage = () => {
   const fetchContracts = useCallback(async () => {
     setLoading(true);
     try {
-      // Gọi API kèm tham số search và trangThai
       const res = await api.get(
         `/HopDong?search=${searchTerm}&trangThai=${statusFilter}`,
       );
@@ -53,14 +53,26 @@ const ContractManagementPage = () => {
     }
   }, [searchTerm, statusFilter]);
 
-  // Load lại khi filter thay đổi
   useEffect(() => {
-    // Debounce search để tránh gọi API liên tục
     const timer = setTimeout(() => fetchContracts(), 500);
     return () => clearTimeout(timer);
   }, [fetchContracts]);
 
-  // Load danh sách nhân viên (để dùng trong Modal)
+  // --- 2. THÊM EFFECT GỌI API LẤY THÔNG TIN GIÁM ĐỐC ---
+  useEffect(() => {
+    const fetchDirector = async () => {
+      try {
+        // Gọi API bạn đã viết trong HopDongController
+        // Dùng 'api' instance để tự động gửi kèm Token (tránh lỗi 401)
+        const res = await api.get("/HopDong/GiamDoc");
+        setDirectorInfo(res.data);
+      } catch (err) {
+        console.error("Không lấy được thông tin giám đốc:", err);
+      }
+    };
+    fetchDirector();
+  }, []);
+
   useEffect(() => {
     if (canModify) {
       const fetchEmps = async () => {
@@ -73,28 +85,47 @@ const ContractManagementPage = () => {
     }
   }, [canModify]);
 
-  // --- XỬ LÝ LƯU (THÊM / SỬA) ---
+  // --- FETCH FRESH DATA FOR PRINTING ---
+  const handlePrintClick = async (contract) => {
+    try {
+      const empRes = await api.get(`/NhanVien/${contract.maNhanVien}`);
+      const freshEmployeeData = empRes.data;
+
+      const mergedData = {
+        ...contract,
+        ChuKy: freshEmployeeData.chuKy,
+        CCCD: freshEmployeeData.cccd,
+        DiaChi: freshEmployeeData.diaChiThuongTru,
+        SoDienThoai: freshEmployeeData.sdt_NhanVien,
+        NgaySinh: freshEmployeeData.ngaySinh,
+      };
+
+      setPrintingContract(mergedData);
+    } catch (error) {
+      console.error("Error fetching fresh employee data for print:", error);
+      setPrintingContract(contract);
+    }
+  };
+
   const handleSave = async (payload, isUpdate) => {
     try {
       const config = { headers: { "Content-Type": "multipart/form-data" } };
       if (isUpdate) {
-        const id = encodeURIComponent(payload.get("soHopDong")); // Encode nếu số HĐ có ký tự đặc biệt
+        const id = encodeURIComponent(payload.get("soHopDong"));
         await api.put(`/HopDong?id=${id}`, payload, config);
       } else {
         await api.post("/HopDong", payload, config);
       }
-
       alert(isUpdate ? "Cập nhật thành công!" : "Tạo hợp đồng mới thành công!");
       setIsModalOpen(false);
       setEditingContract(null);
-      fetchContracts(); // Reload lại bảng
+      fetchContracts();
     } catch (err) {
       const msg = err.response?.data?.message || "Có lỗi xảy ra.";
       alert("Lỗi: " + msg);
     }
   };
 
-  // --- HELPER FORMAT ---
   const formatMoney = (val) =>
     new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -108,8 +139,6 @@ const ContractManagementPage = () => {
       return <span className="badge badge-red">Đã chấm dứt</span>;
     if (status === "HetHan")
       return <span className="badge badge-gray">Hết hạn</span>;
-
-    // Logic phụ: Nếu trạng thái là Hiệu lực nhưng ngày hiện tại > ngày kết thúc -> Cảnh báo
     if (endDate && new Date(endDate) < new Date()) {
       return <span className="badge badge-warning">Quá hạn (Cần gia hạn)</span>;
     }
@@ -119,10 +148,11 @@ const ContractManagementPage = () => {
   return (
     <DashboardLayout>
       <div className="contract-page">
-        {/* Modal Preview In */}
+        {/* --- 3. TRUYỀN BIẾN director={directorInfo} VÀO COMPONENT TEMPLATE --- */}
         {printingContract && (
           <ContractTemplate
             data={printingContract}
+            director={directorInfo} // <--- QUAN TRỌNG: Thêm dòng này
             onClose={() => setPrintingContract(null)}
           />
         )}
@@ -133,8 +163,6 @@ const ContractManagementPage = () => {
               <FaFileContract /> Quản lý Hợp Đồng
             </h1>
           </div>
-
-          {/* Nút Tạo Mới (Chỉ hiện cho HR/Giám đốc) */}
           {canModify && (
             <button
               className="btn-add"
@@ -148,7 +176,6 @@ const ContractManagementPage = () => {
           )}
         </div>
 
-        {/* --- THANH CÔNG CỤ (SEARCH & FILTER) --- */}
         <div className="toolbar">
           <div className="search-box">
             <FaSearch />
@@ -158,7 +185,6 @@ const ContractManagementPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
           <div className="filter-box">
             <FaFilter className="filter-icon" />
             <select
@@ -174,7 +200,6 @@ const ContractManagementPage = () => {
           </div>
         </div>
 
-        {/* --- BẢNG DỮ LIỆU --- */}
         <div className="table-container">
           {loading ? (
             <div className="loading-state">Đang tải dữ liệu...</div>
@@ -215,19 +240,16 @@ const ContractManagementPage = () => {
                         {formatMoney(c.luongCoBan)}
                       </td>
                       <td>{getStatusBadge(c.trangThai, c.ngayKetThuc)}</td>
-
                       <td style={{ textAlign: "center" }}>
                         <div className="action-group">
-                          {/* Nút In (Ai cũng thấy nếu được vào trang này) */}
                           <button
                             className="icon-btn print"
-                            onClick={() => setPrintingContract(c)}
+                            onClick={() => handlePrintClick(c)}
                             title="Xem & In"
                           >
                             <FaPrint />
                           </button>
 
-                          {/* Nút Sửa (Chỉ HR/Giám đốc thấy) */}
                           {canModify && (
                             <button
                               className="icon-btn edit"
@@ -235,7 +257,7 @@ const ContractManagementPage = () => {
                                 setEditingContract(c);
                                 setIsModalOpen(true);
                               }}
-                              title="Chỉnh sửa / Chấm dứt / Gia hạn"
+                              title="Chỉnh sửa / Chấm dứt"
                             >
                               <FaEdit />
                             </button>
@@ -256,7 +278,6 @@ const ContractManagementPage = () => {
           )}
         </div>
 
-        {/* Modal Thêm/Sửa */}
         {isModalOpen && (
           <ContractModal
             contract={editingContract}

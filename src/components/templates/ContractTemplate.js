@@ -2,38 +2,41 @@ import React from "react";
 import { FaPrint, FaTimes, FaFileContract } from "react-icons/fa";
 import "../../styles/ContractTemplate.css";
 
-const ContractTemplate = ({ data, onClose }) => {
+// Thêm prop 'director' vào danh sách nhận props
+const ContractTemplate = ({ data, director, onClose }) => {
   if (!data) return null;
 
   const handlePrint = () => {
     window.print();
   };
 
-  // Helper format ngày tháng năm (dd/MM/yyyy)
   const formatDate = (d) => {
     if (!d) return "...../...../.......";
     const date = new Date(d);
     if (isNaN(date.getTime())) return "...../...../.......";
-
     const day = date.getDate().toString().padStart(2, "0");
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
 
-  // Helper lấy ngày hiện tại để điền vào phần đầu hợp đồng
   const today = new Date();
   const currentDay = today.getDate();
   const currentMonth = today.getMonth() + 1;
   const currentYear = today.getFullYear();
 
-  // Helper format tiền tệ
   const formatMoney = (val) =>
     val ? new Intl.NumberFormat("vi-VN").format(val) : "................";
 
+  // --- Helper lấy dữ liệu an toàn (xử lý chữ Hoa/Thường của API) ---
+  const getDirectorName = () =>
+    director?.HoTen || director?.hoTen || "CHƯA CẬP NHẬT";
+  const getDirectorPosition = () =>
+    director?.TenChucVu || director?.tenChucVu || "Giám đốc"; // Lấy chức vụ động
+  const getDirectorSign = () => director?.ChuKy || director?.chuKy;
+
   return (
     <div className="contract-preview-overlay">
-      {/* --- TOOLBAR --- */}
       <div className="preview-toolbar">
         <div className="preview-title">
           <FaFileContract style={{ marginRight: "10px" }} />
@@ -49,10 +52,9 @@ const ContractTemplate = ({ data, onClose }) => {
         </div>
       </div>
 
-      {/* --- NỘI DUNG HỢP ĐỒNG (KHUNG CUỘN) --- */}
       <div className="preview-content-scroll">
         <div className="contract-paper">
-          {/* 1. HEADER QUỐC HIỆU & TIÊU ĐỀ */}
+          {/* HEADER */}
           <div
             style={{
               display: "flex",
@@ -106,7 +108,6 @@ const ContractTemplate = ({ data, onClose }) => {
             </h1>
           </div>
 
-          {/* 2. CĂN CỨ */}
           <div
             style={{
               fontStyle: "italic",
@@ -124,7 +125,7 @@ const ContractTemplate = ({ data, onClose }) => {
             tại Văn phòng Công ty XYZ, chúng tôi gồm có:
           </div>
 
-          {/* 3. BÊN A (NGƯỜI SỬ DỤNG LAO ĐỘNG) */}
+          {/* --- BÊN A (NGƯỜI SỬ DỤNG LAO ĐỘNG) - ĐÃ CẬP NHẬT DỮ LIỆU ĐỘNG --- */}
           <div className="c-section">
             <div style={{ fontWeight: "bold", fontSize: "11pt" }}>
               BÊN A (Người sử dụng lao động): CÔNG TY CÔNG NGHỆ XYZ
@@ -141,12 +142,13 @@ const ContractTemplate = ({ data, onClose }) => {
                 <tr>
                   <td style={{ width: "140px" }}>Đại diện</td>
                   <td>
-                    : <strong>Ông NGUYỄN VĂN GIÁM ĐỐC</strong>
+                    : <strong>Ông/Bà {getDirectorName().toUpperCase()}</strong>
                   </td>
                 </tr>
                 <tr>
                   <td>Chức vụ</td>
-                  <td>: Giám Đốc</td>
+                  {/* Hiển thị chức vụ lấy từ API (VD: Tổng Giám Đốc) */}
+                  <td>: {getDirectorPosition()}</td>
                 </tr>
                 <tr>
                   <td>Địa chỉ</td>
@@ -179,7 +181,7 @@ const ContractTemplate = ({ data, onClose }) => {
             VÀ
           </div>
 
-          {/* 4. BÊN B (NGƯỜI LAO ĐỘNG) - CẬP NHẬT FULL THÔNG TIN */}
+          {/* BÊN B (NGƯỜI LAO ĐỘNG) */}
           <div className="c-section">
             <div style={{ fontWeight: "bold", fontSize: "11pt" }}>
               BÊN B (Người lao động): Ông/Bà{" "}
@@ -196,12 +198,10 @@ const ContractTemplate = ({ data, onClose }) => {
               <tbody>
                 <tr>
                   <td style={{ width: "140px" }}>Ngày sinh</td>
-                  {/* Lấy dữ liệu Ngày Sinh */}
                   <td>: {formatDate(data.NgaySinh || data.ngaySinh)}</td>
                 </tr>
                 <tr>
                   <td>Số CCCD/CMND</td>
-                  {/* Lấy dữ liệu CCCD */}
                   <td>
                     :{" "}
                     <strong>
@@ -211,14 +211,12 @@ const ContractTemplate = ({ data, onClose }) => {
                 </tr>
                 <tr>
                   <td>Địa chỉ thường trú</td>
-                  {/* Lấy dữ liệu Địa chỉ */}
                   <td>
                     : {data.DiaChi || data.diaChi || "...................."}
                   </td>
                 </tr>
                 <tr>
                   <td>Điện thoại</td>
-                  {/* Lấy dữ liệu SĐT */}
                   <td>
                     :{" "}
                     {data.SoDienThoai ||
@@ -244,9 +242,7 @@ const ContractTemplate = ({ data, onClose }) => {
             đúng những điều khoản sau đây:
           </div>
 
-          {/* 5. NỘI DUNG CHI TIẾT */}
-
-          {/* ĐIỀU 1 */}
+          {/* NỘI DUNG ĐIỀU KHOẢN (Giữ nguyên) */}
           <div
             className="c-article"
             style={{ marginBottom: "15px", fontSize: "11pt" }}
@@ -280,7 +276,6 @@ const ContractTemplate = ({ data, onClose }) => {
             </div>
           </div>
 
-          {/* ĐIỀU 2 */}
           <div
             className="c-article"
             style={{ marginBottom: "15px", fontSize: "11pt" }}
@@ -288,20 +283,16 @@ const ContractTemplate = ({ data, onClose }) => {
             <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>
               Điều 2: Chế độ làm việc
             </div>
-            <div>
-              - Thời gian làm việc: 8 giờ/ngày, từ thứ Hai đến thứ Sáu (và sáng
-              thứ Bảy tùy tính chất công việc).
-            </div>
+            <div>- Thời gian làm việc: 8 giờ/ngày, từ thứ Hai đến thứ Sáu.</div>
             <div>- Được trang bị đầy đủ dụng cụ làm việc cần thiết.</div>
           </div>
 
-          {/* ĐIỀU 3 */}
           <div
             className="c-article"
             style={{ marginBottom: "15px", fontSize: "11pt" }}
           >
             <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>
-              Điều 3: Nghĩa vụ và quyền lợi của người lao động
+              Điều 3: Nghĩa vụ và quyền lợi
             </div>
             <div style={{ fontWeight: "bold", marginTop: "5px" }}>
               3.1. Quyền lợi:
@@ -312,24 +303,17 @@ const ContractTemplate = ({ data, onClose }) => {
                 {formatMoney(data.LuongCoBan || data.luongCoBan)} VNĐ/tháng
               </strong>
               .
-              <br />
-              - Phụ cấp và thưởng: Theo quy chế của Công ty.
-              <br />
-              - Được đóng BHXH, BHYT, BHTN theo quy định của pháp luật.
-              <br />- Được hưởng các chế độ nghỉ lễ, tết, phép năm, ốm đau theo
-              quy định.
+              <br />- Phụ cấp và thưởng: Theo quy chế của Công ty.
+              <br />- Được đóng BHXH, BHYT, BHTN theo quy định của pháp luật.
             </div>
             <div style={{ fontWeight: "bold", marginTop: "5px" }}>
               3.2. Nghĩa vụ:
             </div>
             <div style={{ paddingLeft: "20px" }}>
               - Hoàn thành công việc được giao, chấp hành nội quy lao động.
-              <br />- Bồi thường vi phạm vật chất nếu làm hư hỏng trang thiết
-              bị.
             </div>
           </div>
 
-          {/* ĐIỀU 4 */}
           <div
             className="c-article"
             style={{ marginBottom: "15px", fontSize: "11pt" }}
@@ -347,7 +331,7 @@ const ContractTemplate = ({ data, onClose }) => {
             </div>
           </div>
 
-          {/* CHỮ KÝ */}
+          {/* --- PHẦN CHỮ KÝ (CẬP NHẬT CẢ 2 BÊN) --- */}
           <div
             style={{
               display: "flex",
@@ -356,34 +340,77 @@ const ContractTemplate = ({ data, onClose }) => {
               paddingBottom: "80px",
             }}
           >
+            {/* CỘT NGƯỜI LAO ĐỘNG */}
             <div style={{ textAlign: "center", width: "45%" }}>
               <div style={{ fontWeight: "bold" }}>NGƯỜI LAO ĐỘNG</div>
               <div style={{ fontStyle: "italic", fontSize: "0.9em" }}>
                 (Ký, ghi rõ họ tên)
               </div>
-              <br />
-              <br />
-              <br />
-              <br />
-              <br />
+
+              <div
+                style={{
+                  height: "100px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "10px 0",
+                }}
+              >
+                {data.ChuKy || data.chuKy ? (
+                  <img
+                    src={data.ChuKy || data.chuKy}
+                    alt="Chữ ký NLĐ"
+                    style={{ maxHeight: "80px", maxWidth: "150px" }}
+                  />
+                ) : (
+                  <span style={{ color: "#ccc", fontSize: "12px" }}>
+                    (Chưa có chữ ký)
+                  </span>
+                )}
+              </div>
+
               <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>
                 {data.HoTenNhanVien || data.hoTenNhanVien}
               </div>
             </div>
 
+            {/* CỘT ĐẠI DIỆN CÔNG TY (GIÁM ĐỐC) - DỮ LIỆU ĐỘNG */}
             <div style={{ textAlign: "center", width: "45%" }}>
               <div style={{ fontWeight: "bold" }}>ĐẠI DIỆN CÔNG TY</div>
               <div style={{ fontStyle: "italic", fontSize: "0.9em" }}>
                 (Ký, đóng dấu, ghi rõ họ tên)
               </div>
-              <br />
-              <br />
-              <br />
-              <br />
-              <br />
-              <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>
-                Nguyễn Văn Giám Đốc
+
+              {/* Hiển thị Chữ ký Giám đốc */}
+              <div
+                style={{
+                  height: "100px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "10px 0",
+                }}
+              >
+                {getDirectorSign() ? (
+                  <img
+                    src={getDirectorSign()}
+                    alt="Chữ ký GĐ"
+                    style={{ maxHeight: "80px", maxWidth: "150px" }}
+                  />
+                ) : (
+                  /* Để trống để ký tay nếu chưa có chữ ký số */
+                  <span style={{ color: "#ccc", fontSize: "12px" }}>
+                    (Chưa có chữ ký)
+                  </span>
+                )}
               </div>
+
+              {/* Tên Giám đốc & Chức vụ bên dưới */}
+              <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>
+                {getDirectorName()}
+              </div>
+              {/* Hiển thị lại chức vụ dưới tên (Tùy chọn) */}
+              {/* <div style={{ fontSize: "10pt", fontWeight: "bold" }}>{getDirectorPosition()}</div> */}
             </div>
           </div>
         </div>

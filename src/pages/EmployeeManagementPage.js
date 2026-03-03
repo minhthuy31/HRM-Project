@@ -12,10 +12,12 @@ import {
   FaEllipsisV,
   FaDownload,
   FaUpload,
+  FaPenNib, // Icon cho chữ ký
 } from "react-icons/fa";
 import "../styles/EmployeePage.css";
 import EmployeeModal from "../components/modals/EmployeeModal";
 import * as XLSX from "xlsx";
+import SignatureModal from "../components/modals/SignatureModal"; // Import Modal Ký tên
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -24,8 +26,6 @@ const getImageUrl = (path) => {
 };
 
 // --- ContextMenu ---
-// Lưu ý: Prop truyền vào nên thống nhất tên, ở đây tôi dùng 'canModify' cho prop,
-// nhưng bên trong component cha ta sẽ truyền giá trị của biến 'isHRManager' vào prop này.
 const ContextMenu = ({ employee, onAction, onClose, x, y, canModify }) => {
   useEffect(() => {
     const handleClickOutside = () => onClose();
@@ -44,6 +44,10 @@ const ContextMenu = ({ employee, onAction, onClose, x, y, canModify }) => {
           <>
             <li onClick={() => onAction("edit", employee)}>
               <FaEdit /> Chỉnh sửa
+            </li>
+            {/* THÊM MỤC CẬP NHẬT CHỮ KÝ */}
+            <li onClick={() => onAction("signature", employee)}>
+              <FaPenNib /> Cập nhật chữ ký
             </li>
             <li onClick={() => onAction("delete", employee)}>
               <FaTrash /> Vô hiệu hóa
@@ -77,12 +81,13 @@ const EmployeePage = () => {
   const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // --- STATE CHO CHỮ KÝ ---
+  const [showSigModal, setShowSigModal] = useState(false);
+  const [selectedEmpForSig, setSelectedEmpForSig] = useState(null);
+
   // --- LOGIC PHÂN QUYỀN ---
   const user = getUserFromToken();
   const userRole = user?.role || user?.Role || "";
-
-  // SỬA LỖI Ở ĐÂY: Đặt tên biến là 'isHRManager' để khớp với các đoạn code bên dưới
-  // Logic: Nhân sự trưởng HOẶC Giám đốc đều có quyền quản lý
   const isHRManager = userRole === "Nhân sự trưởng" || userRole === "Giám đốc";
 
   const [activeMenu, setActiveMenu] = useState({
@@ -190,6 +195,31 @@ const EmployeePage = () => {
     setActiveMenu({ id: employee.maNhanVien, x, y });
   };
 
+  // --- HÀM MỞ MODAL KÝ TÊN ---
+  const openSignatureModal = (employee) => {
+    setSelectedEmpForSig(employee);
+    setShowSigModal(true);
+  };
+
+  // --- HÀM LƯU CHỮ KÝ (GỌI API) ---
+  const handleSaveSignature = async (base64String) => {
+    if (!selectedEmpForSig) return;
+
+    try {
+      await api.post("/NhanVien/save-signature-base64", {
+        maNhanVien: selectedEmpForSig.maNhanVien,
+        base64Image: base64String,
+      });
+
+      alert("Đã cập nhật chữ ký thành công!");
+      setShowSigModal(false);
+      fetchData(); // Load lại để update data mới nhất
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi lưu chữ ký: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   const handleAction = async (actionType, employee) => {
     setActiveMenu({ id: null, x: 0, y: 0 });
 
@@ -204,14 +234,20 @@ const EmployeePage = () => {
     }
 
     // --- CHECK QUYỀN TRƯỚC KHI THỰC HIỆN ACTION ---
-    // Sử dụng biến isHRManager ở đây (đã định nghĩa ở trên)
     if (
       (actionType === "edit" ||
         actionType === "delete" ||
-        actionType === "edit-external") &&
+        actionType === "edit-external" ||
+        actionType === "signature") && // Thêm quyền signature
       !isHRManager
     ) {
       alert("Bạn không có quyền thực hiện chức năng này.");
+      return;
+    }
+
+    // Xử lý mở Modal Ký tên
+    if (actionType === "signature") {
+      openSignatureModal(employee);
       return;
     }
 
@@ -253,7 +289,6 @@ const EmployeePage = () => {
   };
 
   const handleSave = async (employeeData, imageFile) => {
-    // Sử dụng biến isHRManager
     if (!isHRManager) {
       alert("Bạn không có quyền lưu thay đổi.");
       return;
@@ -287,6 +322,7 @@ const EmployeePage = () => {
     }
   };
 
+  // ... (Giữ nguyên các hàm handleExportExcel, handleImportExcel, findIdByName, excelDateToJSDate) ...
   const handleExportExcel = () => {
     if (employees.length === 0) {
       alert("Không có dữ liệu nhân viên để xuất.");
@@ -389,7 +425,6 @@ const EmployeePage = () => {
   };
 
   const handleImportExcel = (e) => {
-    // Sử dụng biến isHRManager
     if (!isHRManager) {
       alert("Bạn không có quyền nhập dữ liệu.");
       return;
@@ -534,7 +569,6 @@ const EmployeePage = () => {
               </form>
 
               <div className="action-buttons-group">
-                {/* Sử dụng biến isHRManager */}
                 {isHRManager && (
                   <>
                     <button
@@ -562,7 +596,6 @@ const EmployeePage = () => {
                   <FaDownload /> Xuất
                 </button>
 
-                {/* Sử dụng biến isHRManager */}
                 {isHRManager && (
                   <button
                     onClick={() => setModal({ type: "edit", data: null })}
@@ -697,7 +730,7 @@ const EmployeePage = () => {
           onClose={() => setActiveMenu({ id: null, x: 0, y: 0 })}
           x={activeMenu.x}
           y={activeMenu.y}
-          canModify={isHRManager} // Truyền quyền sửa xuống ContextMenu
+          canModify={isHRManager}
         />
       )}
 
@@ -706,7 +739,6 @@ const EmployeePage = () => {
           employee={modal.data}
           onCancel={() => setModal({ type: null, data: null })}
           onSave={handleSave}
-          // Chỉ cho phép sửa nếu modal không phải view VÀ user là HR Manager (hoặc Giám đốc)
           isViewOnly={modal.type === "view" || !isHRManager}
           phongBans={phongBans}
           chucVus={chucVus}
@@ -714,6 +746,14 @@ const EmployeePage = () => {
           trinhDoHocVans={trinhDoHocVans}
           hopDongs={hopDongs}
           managers={managers}
+        />
+      )}
+
+      {/* RENDER MODAL KÝ TÊN */}
+      {showSigModal && (
+        <SignatureModal
+          onSave={handleSaveSignature}
+          onCancel={() => setShowSigModal(false)}
         />
       )}
     </DashboardLayout>

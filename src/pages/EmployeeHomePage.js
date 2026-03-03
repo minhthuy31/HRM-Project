@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { api } from "../api";
-import { FaSearch } from "react-icons/fa";
 import { FiSun, FiMoon, FiLogOut } from "react-icons/fi";
 import { Link, useNavigate, useParams, Outlet } from "react-router-dom";
 import "../styles/EmployeeHome.css";
+// 1. Import icon đã gộp (để tránh lỗi FaSearch declared)
+import { FaSearch, FaUserAstronaut } from "react-icons/fa";
+
+// 2. QUAN TRỌNG: Import component FaceRecognition (Sửa lỗi not defined)
+import FaceRecognition from "../components/FaceRecognition";
 
 // Import các Modal
 import LeaveRequestModal from "../components/modals/LeaveRequestModal";
-import OTRequestModal from "../components/modals/OTRequestModal"; // Mới
-import BusinessTripModal from "../components/modals/BusinessTripModal"; // Mới
+import OTRequestModal from "../components/modals/OTRequestModal";
+import BusinessTripModal from "../components/modals/BusinessTripModal";
 
 import CheckInScanner from "../components/CheckInScanner";
 import "../styles/Modal.css";
@@ -27,13 +31,17 @@ const EmployeeHomePage = () => {
   const { employeeId } = useParams();
 
   // --- STATE MODALS ---
-  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false); // Đổi tên cho rõ nghĩa
-  const [isOTModalOpen, setIsOTModalOpen] = useState(false); // Mới: Modal OT
-  const [isTripModalOpen, setIsTripModalOpen] = useState(false); // Mới: Modal Công tác
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isOTModalOpen, setIsOTModalOpen] = useState(false);
+  const [isTripModalOpen, setIsTripModalOpen] = useState(false);
 
   // --- STATE QUÉT QR ---
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scanResult, setScanResult] = useState(null);
+
+  // --- STATE FACE ID ---
+  const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
+  const [faceMode, setFaceMode] = useState("checkin");
 
   const [timekeepingSummary, setTimekeepingSummary] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -120,7 +128,6 @@ const EmployeeHomePage = () => {
   // --- MỚI: XỬ LÝ ĐĂNG KÝ OT ---
   const handleSaveOTRequest = async (data) => {
     try {
-      // data: { ngayLamThem, gioBatDau, gioKetThuc, lyDo }
       await api.post("/DangKyOT", data);
       alert("Đăng ký làm thêm giờ thành công!");
       setIsOTModalOpen(false);
@@ -134,7 +141,6 @@ const EmployeeHomePage = () => {
   // --- MỚI: XỬ LÝ ĐĂNG KÝ CÔNG TÁC ---
   const handleSaveTripRequest = async (data) => {
     try {
-      // data: { ngayBatDau, ngayKetThuc, noiCongTac, mucDich, phuongTien }
       await api.post("/DangKyCongTac", { ...data, MaNhanVien: employeeId });
       alert("Đăng ký công tác thành công!");
       setIsTripModalOpen(false);
@@ -143,6 +149,49 @@ const EmployeeHomePage = () => {
         error.response?.data?.message || "Lỗi khi đăng ký công tác.";
       alert(`Lỗi: ${errorMessage}`);
     }
+  };
+
+  // --- HÀM XỬ LÝ NHẬN DIỆN KHUÔN MẶT ---
+  const handleFaceCapture = async (faceDescriptor) => {
+    try {
+      if (faceMode === "register") {
+        await api.post("/ChamCong/register-face", {
+          MaNhanVien: employeeId,
+          FaceDescriptor: faceDescriptor,
+        });
+        alert(
+          "✅ Đăng ký khuôn mặt thành công! Bạn có thể dùng khuôn mặt để chấm công từ bây giờ.",
+        );
+      } else {
+        const res = await api.post("/ChamCong/check-in-face", {
+          FaceDescriptor: faceDescriptor,
+        });
+
+        if (res.data.success) {
+          alert(`✅ ${res.data.message}`);
+        } else {
+          alert(
+            "❌ " + (res.data.message || "Không nhận diện được khuôn mặt."),
+          );
+        }
+      }
+      setIsFaceModalOpen(false);
+    } catch (error) {
+      console.error("Lỗi API khuôn mặt:", error);
+      const msg =
+        error.response?.data?.message || "Đã có lỗi xảy ra khi kết nối server.";
+      alert("❌ " + msg);
+    }
+  };
+
+  const openFaceRegister = () => {
+    setFaceMode("register");
+    setIsFaceModalOpen(true);
+  };
+
+  const openFaceCheckIn = () => {
+    setFaceMode("checkin");
+    setIsFaceModalOpen(true);
   };
 
   // --- XỬ LÝ QUÉT QR ---
@@ -213,7 +262,6 @@ const EmployeeHomePage = () => {
                 Đăng ký nghỉ
               </button>
 
-              {/* Nút Đăng ký OT */}
               <button
                 className="sidebar-action-btn"
                 onClick={() => setIsOTModalOpen(true)}
@@ -221,12 +269,15 @@ const EmployeeHomePage = () => {
                 Đăng ký OT
               </button>
 
-              {/* Nút Đăng ký Công tác */}
               <button
                 className="sidebar-action-btn"
                 onClick={() => setIsTripModalOpen(true)}
               >
                 Đăng ký Công tác
+              </button>
+
+              <button className="sidebar-action-btn" onClick={openFaceCheckIn}>
+                📸 Chấm công Khuôn mặt
               </button>
 
               <button
@@ -258,6 +309,17 @@ const EmployeeHomePage = () => {
                   </Link>
                 </li>
                 <li>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openFaceRegister();
+                    }}
+                  >
+                    Cài đặt dữ liệu khuôn mặt
+                  </a>
+                </li>
+                <li>
                   <a href="#" onClick={handleLogout}>
                     Đăng xuất
                   </a>
@@ -268,7 +330,6 @@ const EmployeeHomePage = () => {
           <section className="main-feed">
             <Outlet context={{ employee: user }} />
           </section>
-          <aside className="right-sidebar"></aside>
         </main>
       </div>
 
@@ -322,6 +383,15 @@ const EmployeeHomePage = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 5. MODAL NHẬN DIỆN KHUÔN MẶT */}
+      {isFaceModalOpen && (
+        <FaceRecognition
+          mode={faceMode}
+          onCapture={handleFaceCapture}
+          onClose={() => setIsFaceModalOpen(false)}
+        />
       )}
 
       {/* Popup thông báo thành công */}

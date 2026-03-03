@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
-import { FaChevronLeft, FaChevronRight, FaPlus } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import "../styles/MyTimekeepingPage.css";
-// IMPORT MODAL CŨ ĐÃ CÓ (Theo yêu cầu của bạn)
-import LeaveRequestModal from "../components/modals/LeaveRequestModal";
 
 const getDayOfWeek = (year, month, day) => {
   const date = new Date(year, month, day);
@@ -28,7 +26,6 @@ const MyTimekeepingPage = () => {
   const [recordsMap, setRecordsMap] = useState(new Map());
   const [pendingRequestsMap, setPendingRequestsMap] = useState(new Map());
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchData = useCallback(
     async (date) => {
@@ -38,7 +35,7 @@ const MyTimekeepingPage = () => {
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
         const response = await api.get(
-          `/ChamCong/${employeeId}?year=${year}&month=${month}`
+          `/ChamCong/${employeeId}?year=${year}&month=${month}`,
         );
 
         const {
@@ -67,7 +64,7 @@ const MyTimekeepingPage = () => {
         setLoading(false);
       }
     },
-    [employeeId]
+    [employeeId],
   );
 
   useEffect(() => {
@@ -76,90 +73,91 @@ const MyTimekeepingPage = () => {
 
   const changeMonth = (offset) => {
     setCurrentDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1)
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1),
     );
-  };
-
-  const handleLeaveRequestSubmit = async (requestData) => {
-    try {
-      const leaveRequestPayload = {
-        maNhanVien: employeeId,
-        ngayNghi: requestData.ngayNghi,
-        lyDo: requestData.lyDo,
-      };
-
-      const response = await api.post("/DonNghiPhep", leaveRequestPayload);
-
-      alert("Gửi đơn xin nghỉ thành công! Vui lòng chờ quản lý duyệt.");
-      setIsModalOpen(false);
-
-      // Cập nhật UI ngay lập tức
-      const newPendingRequest = response.data;
-      const day = new Date(newPendingRequest.ngayNghi).getUTCDate();
-      setPendingRequestsMap((prevMap) =>
-        new Map(prevMap).set(day, newPendingRequest)
-      );
-    } catch (error) {
-      let errorMessage = "Gửi đơn thất bại. Vui lòng thử lại.";
-      if (error.response?.data) {
-        const { errors, message, title } = error.response.data;
-        if (errors) errorMessage = Object.values(errors).flat().join("\n");
-        else if (message) errorMessage = message;
-        else if (title) errorMessage = title;
-        else errorMessage = JSON.stringify(error.response.data, null, 2);
-      } else {
-        errorMessage = error.message;
-      }
-      alert("Đã xảy ra lỗi:\n" + errorMessage);
-    }
   };
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
     currentDate.getMonth() + 1,
-    0
+    0,
   ).getDate();
   const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // --- HÀM XỬ LÝ TRẠNG THÁI (Đã loại bỏ logic hiển thị OT) ---
+  // --- HÀM XỬ LÝ GIAO DIỆN HIỂN THỊ CHẤM CÔNG ---
   const getWorkDayStyleAndStatus = (day) => {
-    // 1. Ưu tiên hiển thị dữ liệu chấm công đã có
     if (recordsMap.has(day)) {
       const record = recordsMap.get(day);
       const ngayCong = record?.ngayCong;
+      let className = "";
 
-      // LOGIC CŨ: Không check OT, chỉ check công
+      // Xác định class màu cho số ngày công
       if (ngayCong === 1.0)
-        return {
-          text: "1.0",
-          className: record.ghiChu ? "status-leave" : "status-present",
-          note: record.ghiChu,
-        };
-      if (ngayCong === 0.5)
-        return {
-          text: "0.5",
-          className: "status-half-day",
-          note: record.ghiChu,
-        };
-      if (ngayCong === 0.0)
-        return {
-          text: "0.0",
-          className: "status-absent",
-          note: record.ghiChu,
-        };
+        className =
+          record.ghiChu && !record.ghiChu.includes("Đi muộn")
+            ? "status-leave"
+            : "status-present";
+      else if (ngayCong === 0.5) className = "status-half-day";
+      else if (ngayCong === 0.0) className = "status-absent";
+
+      // Hàm format giờ
+      const formatTime = (timeStr) => {
+        if (!timeStr) return "--:--";
+        const date = new Date(timeStr);
+        return date.toLocaleTimeString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+      };
+
+      // Xử lý làm sạch ghi chú (Lọc bỏ đoạn text do C# tự sinh)
+      let cleanNote = record.ghiChu || "";
+      let isLate = false;
+
+      if (cleanNote) {
+        if (cleanNote.includes("Đi muộn")) {
+          isLate = true;
+        }
+
+        // Cắt bỏ phần dư thừa
+        cleanNote = cleanNote
+          .replace(/Face Check-in/g, "")
+          .replace(/\|? *Face Check-out: \d{2}:\d{2}/g, "")
+          .replace(/\(Đi muộn\)/g, "") // Xóa chữ đi muộn mặc định để ta tự render
+          .trim();
+      }
+
+      return {
+        ngayCong: ngayCong, // Số công (0, 0.5, 1)
+        className: className, // Class màu cho số công
+        inTime: record.gioCheckIn ? formatTime(record.gioCheckIn) : null,
+        outTime: record.gioCheckOut ? formatTime(record.gioCheckOut) : null,
+        isLate: isLate, // Biến kiểm tra xem có đi muộn không
+        note: cleanNote, // Ghi chú còn lại (ví dụ: Nghỉ ốm)
+      };
     }
 
-    // 2. Nếu không có chấm công, kiểm tra đơn chờ duyệt
     if (pendingRequestsMap.has(day)) {
       const request = pendingRequestsMap.get(day);
       return {
-        text: "Chờ duyệt",
+        ngayCong: "Chờ duyệt",
         className: "status-pending",
+        inTime: null,
+        outTime: null,
+        isLate: false,
         note: request.lyDo,
       };
     }
 
-    return { text: "", className: "", note: "" };
+    return {
+      ngayCong: "",
+      className: "",
+      inTime: null,
+      outTime: null,
+      isLate: false,
+      note: "",
+    };
   };
 
   return (
@@ -176,9 +174,6 @@ const MyTimekeepingPage = () => {
             <FaChevronRight />
           </button>
         </div>
-        <button className="add-btn" onClick={() => setIsModalOpen(true)}>
-          <FaPlus /> Đăng ký nghỉ
-        </button>
       </div>
 
       <div className="timekeeping-list">
@@ -190,7 +185,8 @@ const MyTimekeepingPage = () => {
           <div className="loading-text">Đang tải dữ liệu...</div>
         ) : (
           allDays.map((day) => {
-            const { text, className, note } = getWorkDayStyleAndStatus(day);
+            const { ngayCong, className, inTime, outTime, isLate, note } =
+              getWorkDayStyleAndStatus(day);
             return (
               <div className="day-row" key={day}>
                 <div className="date-col">
@@ -201,13 +197,83 @@ const MyTimekeepingPage = () => {
                     {getDayOfWeek(
                       currentDate.getFullYear(),
                       currentDate.getMonth(),
-                      day
+                      day,
                     )}
                   </span>
                 </div>
-                <div className="status-col">
-                  <span className={className}>{text}</span>
-                  {note && <span className="reason-note">{note}</span>}
+
+                {/* --- CỘT TRẠNG THÁI --- */}
+                <div
+                  className="status-col"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  {/* 1. HIỂN THỊ SỐ CÔNG (Có màu) */}
+                  {ngayCong !== "" && (
+                    <span
+                      className={className}
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {ngayCong}
+                    </span>
+                  )}
+
+                  {/* 2. HIỂN THỊ GIỜ VÀO - RA */}
+                  {(inTime || outTime) && (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        fontSize: "13px",
+                        background: "#f3f4f6",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      <span style={{ color: "#10b981", fontWeight: "600" }}>
+                        Vào: {inTime || "--:--"}
+                      </span>
+                      <span style={{ color: "#ef4444", fontWeight: "600" }}>
+                        Ra: {outTime || "--:--"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 3. HIỂN THỊ CẢNH BÁO ĐI MUỘN */}
+                  {isLate && (
+                    <span
+                      style={{
+                        color: "#ef4444",
+                        fontSize: "13px",
+                        fontStyle: "italic",
+                        marginTop: "4px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      ⚠️ Đi muộn
+                    </span>
+                  )}
+
+                  {/* 4. HIỂN THỊ GHI CHÚ KHÁC (Nếu có) */}
+                  {note && (
+                    <span
+                      className="reason-note"
+                      style={{
+                        marginTop: "4px",
+                        fontSize: "13px",
+                        color: "#6b7280",
+                      }}
+                    >
+                      {note}
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -254,16 +320,6 @@ const MyTimekeepingPage = () => {
           <p>Chưa có dữ liệu chấm công cho tháng này.</p>
         )}
       </div>
-
-      {/* MODAL ĐƯỢC IMPORT VÀ SỬ DỤNG LẠI */}
-      {isModalOpen && (
-        <LeaveRequestModal
-          onSave={handleLeaveRequestSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          // --- SỬA Ở ĐÂY: Truyền thêm prop remainingLeave ---
-          remainingLeave={summary?.remainingLeaveDays || 0}
-        />
-      )}
     </div>
   );
 };

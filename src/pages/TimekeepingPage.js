@@ -19,10 +19,8 @@ const TimekeepingPage = () => {
   const [loading, setLoading] = useState(true);
   const [summaries, setSummaries] = useState({});
 
-  // State kiểm tra trạng thái khóa công
   const [isLocked, setIsLocked] = useState(false);
 
-  // State cho việc chỉnh sửa
   const [editingCell, setEditingCell] = useState(null);
   const [selection, setSelection] = useState({ type: null, id: null });
   const [isDragging, setIsDragging] = useState(false);
@@ -33,7 +31,6 @@ const TimekeepingPage = () => {
   const user = getUserFromToken();
   const userRole = user?.role || user?.Role || "";
 
-  // Logic phân quyền
   const canEdit =
     ["Nhân sự trưởng", "Giám đốc", "Trưởng phòng"].includes(userRole) &&
     !isLocked;
@@ -99,16 +96,65 @@ const TimekeepingPage = () => {
   );
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+  // --- HÀM XỬ LÝ GIAO DIỆN HIỂN THỊ CHẤM CÔNG ---
   const getWorkDayStyle = (record) => {
-    const ngayCong = record?.ngayCong;
-    if (ngayCong === 1.0)
+    if (!record)
       return {
-        text: "1.0",
-        className: record?.ghiChu ? "status-leave" : "status-present",
+        ngayCong: "",
+        className: "",
+        inTime: null,
+        outTime: null,
+        isLate: false,
+        note: "",
       };
-    if (ngayCong === 0.5) return { text: "0.5", className: "status-half-day" };
-    if (ngayCong === 0.0) return { text: "0.0", className: "status-absent" };
-    return { text: "", className: "" };
+
+    const ngayCong = record.ngayCong;
+    let className = "";
+
+    // Xác định class màu cho số ngày công
+    if (ngayCong === 1.0)
+      className =
+        record.ghiChu && !record.ghiChu.includes("Đi muộn")
+          ? "status-leave"
+          : "status-present";
+    else if (ngayCong === 0.5) className = "status-half-day";
+    else if (ngayCong === 0.0) className = "status-absent";
+
+    // Hàm format giờ
+    const formatTime = (timeStr) => {
+      if (!timeStr) return null;
+      const date = new Date(timeStr);
+      return date.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    };
+
+    // Xử lý làm sạch ghi chú (Lọc bỏ đoạn text do C# tự sinh)
+    let cleanNote = record.ghiChu || "";
+    let isLate = false;
+
+    if (cleanNote) {
+      if (cleanNote.includes("Đi muộn")) {
+        isLate = true;
+      }
+      // Cắt bỏ phần dư thừa
+      cleanNote = cleanNote
+        .replace(/Face Check-in/g, "")
+        .replace(/\|? *Face Check-out: \d{2}:\d{2}/g, "")
+        .replace(/\(Đi muộn\)/g, "")
+        .trim();
+    }
+
+    return {
+      ngayCong: ngayCong,
+      className: className,
+      inTime: formatTime(record.gioCheckIn),
+      outTime: formatTime(record.gioCheckOut),
+      isLate: isLate,
+      note: cleanNote,
+    };
   };
 
   // --- SELECTION & DRAG LOGIC ---
@@ -198,7 +244,6 @@ const TimekeepingPage = () => {
     );
   };
 
-  // --- SAVE ACTIONS ---
   const handleSave = async (editData) => {
     if (!editingCell || !canEdit) return;
     const year = currentDate.getFullYear();
@@ -289,7 +334,6 @@ const TimekeepingPage = () => {
     }
   };
 
-  // --- KHÓA / HỦY KHÓA CÔNG ---
   const handleLockAction = async (lockStatus) => {
     const actionText = lockStatus ? "KHÓA" : "HỦY KHÓA";
     if (
@@ -448,15 +492,22 @@ const TimekeepingPage = () => {
                         </div>
                       </td>
                       {daysArray.map((day) => {
-                        const record = attendance[emp.maNhanVien]?.[day] || {};
-                        const style = getWorkDayStyle(record);
+                        const record =
+                          attendance[emp.maNhanVien]?.[day] || null;
+                        const {
+                          ngayCong,
+                          className,
+                          inTime,
+                          outTime,
+                          isLate,
+                          note,
+                        } = getWorkDayStyle(record);
                         const selected = isCellSelected(emp.maNhanVien, day);
+
                         return (
                           <td
                             key={day}
-                            className={`attendance-cell ${style.className} ${
-                              selected ? "selected" : ""
-                            }`}
+                            className={`attendance-cell ${className} ${selected ? "selected" : ""}`}
                             onMouseDown={() =>
                               handleMouseDown(emp.maNhanVien, day)
                             }
@@ -466,14 +517,93 @@ const TimekeepingPage = () => {
                             onClick={() => handleCellClick(emp.maNhanVien, day)}
                             style={{
                               cursor: canEdit ? "pointer" : "not-allowed",
+                              verticalAlign: "top",
+                              padding: "8px 4px",
                             }}
                           >
-                            <span>{style.text}</span>
-                            {record.ghiChu && (
-                              <span className="reason-note">
-                                {record.ghiChu}
-                              </span>
-                            )}
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                width: "100%",
+                              }}
+                            >
+                              {/* 1. HIỂN THỊ SỐ CÔNG (LUÔN CÓ NẾU ĐÃ CHẤM CÔNG) */}
+                              {ngayCong !== "" && (
+                                <span
+                                  style={{
+                                    fontWeight: "bold",
+                                    fontSize: "14px",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  {ngayCong}
+                                </span>
+                              )}
+
+                              {/* 2. HIỂN THỊ GIỜ VÀO - RA */}
+                              {(inTime || outTime) && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    fontSize: "11px",
+                                    lineHeight: "1.3",
+                                    textAlign: "center",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color: "#10b981",
+                                      fontWeight: "600",
+                                    }}
+                                  >
+                                    Vào: {inTime || "--:--"}
+                                  </span>
+                                  <span
+                                    style={{
+                                      color: "#ef4444",
+                                      fontWeight: "600",
+                                    }}
+                                  >
+                                    Ra: {outTime || "--:--"}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* 3. HIỂN THỊ CẢNH BÁO ĐI MUỘN */}
+                              {isLate && (
+                                <span
+                                  style={{
+                                    color: "#ef4444",
+                                    fontSize: "10px",
+                                    fontStyle: "italic",
+                                    fontWeight: "600",
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  ⚠️ Đi muộn
+                                </span>
+                              )}
+
+                              {/* 4. HIỂN THỊ GHI CHÚ KHÁC (Cắt ngắn bớt nếu dài) */}
+                              {note && (
+                                <span
+                                  className="reason-note"
+                                  style={{
+                                    fontSize: "10px",
+                                    color: "#6b7280",
+                                    textAlign: "center",
+                                    marginTop: "2px",
+                                    display: "block",
+                                  }}
+                                >
+                                  {note}
+                                </span>
+                              )}
+                            </div>
                           </td>
                         );
                       })}

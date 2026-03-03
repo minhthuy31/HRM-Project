@@ -21,9 +21,20 @@ const formatCurrency = (value) => {
 
 const MyPayslipPage = () => {
   const user = getUserFromToken();
-  const employeeId = user?.nameid || user?.id;
-
   const { employee: contextEmployee } = useOutletContext() || {};
+
+  // 1. Quét mọi Key để đảm bảo luôn lấy được Mã Nhân Viên (tránh undefined)
+  const tokenEmpId =
+    user?.nameid ||
+    user?.id ||
+    user?.MaNhanVien ||
+    user?.[
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+    ] ||
+    user?.unique_name;
+
+  // Ưu tiên lấy từ Context, nếu không có thì lấy từ Token
+  const currentEmpId = contextEmployee?.maNhanVien || tokenEmpId;
   const employeeName =
     contextEmployee?.hoTen || user?.unique_name || "Nhân viên";
 
@@ -34,11 +45,7 @@ const MyPayslipPage = () => {
 
   const fetchData = useCallback(
     async (date) => {
-      if (!employeeId) {
-        setLoading(false);
-        return;
-      }
-
+      // Đã bỏ câu lệnh if(!employeeId) cản trở việc gọi API
       setLoading(true);
       setError(null);
       setPayslipData(null);
@@ -51,17 +58,24 @@ const MyPayslipPage = () => {
           `/BangLuong?year=${year}&month=${month}`,
         );
 
-        // Backend trả về: { Data: [...], IsPublished: ... } (PascalCase)
-        // HOẶC { data: [...], isPublished: ... } (camelCase) tùy cấu hình JSON của server
-        // Dùng destructuring an toàn để bắt cả 2 trường hợp
         const responseData = response.data;
         const list = responseData.data || responseData.Data || [];
 
-        // Tìm bản ghi của mình
-        // So sánh cả maNhanVien (camelCase) và MaNhanVien (PascalCase)
-        const myRecord = list.find(
-          (r) => (r.maNhanVien || r.MaNhanVien) === employeeId,
-        );
+        let myRecord = null;
+
+        // 2. Logic lấy phiếu lương THÔNG MINH và BẢO MẬT
+        if (list.length === 1) {
+          // Trường hợp Backend chỉ trả về đúng 1 người (nhân viên thường xem)
+          myRecord = list[0];
+        } else if (list.length > 1 && currentEmpId) {
+          // Trường hợp sếp/quản lý vào trang cá nhân, Backend trả nguyên list phòng ban
+          // -> Phải tìm chính xác ID của họ trong list đó
+          myRecord = list.find(
+            (item) =>
+              (item.maNhanVien || item.MaNhanVien)?.toLowerCase() ===
+              currentEmpId.toLowerCase(),
+          );
+        }
 
         if (myRecord) {
           setPayslipData(myRecord);
@@ -70,7 +84,6 @@ const MyPayslipPage = () => {
         }
       } catch (err) {
         console.error("Lỗi tải phiếu lương:", err);
-        // Nếu lỗi 403 (Forbidden) nghĩa là chưa chốt -> Coi như chưa có dữ liệu
         if (err.response && err.response.status === 403) {
           setPayslipData(null);
         } else {
@@ -80,7 +93,7 @@ const MyPayslipPage = () => {
         setLoading(false);
       }
     },
-    [employeeId],
+    [currentEmpId], // Dependency quan trọng
   );
 
   useEffect(() => {
@@ -126,7 +139,6 @@ const MyPayslipPage = () => {
     }
 
     // --- BƯỚC QUAN TRỌNG: CHUẨN HÓA DỮ LIỆU ---
-    // Tạo object 'd' (data) để map các trường bất kể Backend trả về hoa hay thường
     const p = payslipData;
     const d = {
       // Cố Định
@@ -179,7 +191,7 @@ const MyPayslipPage = () => {
             </div>
             <div className="info-row">
               <span className="label">Mã NV:</span>
-              <span className="val">{employeeId}</span>
+              <span className="val">{currentEmpId}</span>
             </div>
             <div className="info-row">
               <span className="label">Phòng ban:</span>
