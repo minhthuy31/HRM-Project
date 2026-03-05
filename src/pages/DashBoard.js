@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
-import { api } from "../api"; // Đảm bảo đường dẫn import api đúng với project của bạn
+import { api } from "../api";
 import {
   PieChart,
   Pie,
@@ -22,7 +22,7 @@ import {
   FaMoneyBillWave,
   FaExclamationTriangle,
 } from "react-icons/fa";
-import "../styles/Dashboard.css"; // File CSS chúng ta sẽ tạo ở bước 3
+import "../styles/Dashboard.css";
 
 // Bảng màu cho biểu đồ
 const PIE_COLORS = ["#00C49F", "#333333", "#0088FE", "#FFBB28", "#FF8042"];
