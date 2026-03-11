@@ -9,7 +9,7 @@ const DashboardLayout = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(
-    () => localStorage.getItem("darkMode") === "true"
+    () => localStorage.getItem("darkMode") === "true",
   );
   const navigate = useNavigate();
   const [nhanVien, setNhanVien] = useState(null);
@@ -33,7 +33,8 @@ const DashboardLayout = ({ children }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "/";
   };
 
   useEffect(() => {

@@ -18,9 +18,15 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const response = await api.post("/Auth/login", { email, password });
-      const { token, role, maNhanVien } = response.data;
 
+      // SỬA Ở ĐÂY: Lấy thêm refreshToken từ response.data
+      const { token, refreshToken, role, maNhanVien } = response.data;
+
+      // SỬA Ở ĐÂY: Lưu cả 2 token vào localStorage
       localStorage.setItem("token", token);
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
 
       const normalizeRole = (r) => {
         if (!r) return "";
@@ -54,7 +60,9 @@ const LoginPage = () => {
         navigate("/dashboard");
       } else {
         setError("Role không được hỗ trợ: " + role);
+        // SỬA Ở ĐÂY: Xóa cả 2 token nếu role không hợp lệ
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
       }
     } catch (err) {
       setError(
